@@ -179,13 +179,3 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
-
-
-# pygbag
-*.wav
-*.mp3
-*.pyc
-*.egg-info
-*-pygbag.???
-/build
-/dist

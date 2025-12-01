@@ -1,7 +1,7 @@
-TITLE: str = "jj25"
+TITLE: str = "cap' itulate"
 VERSION: str = "1.0.0"
 AUTHOR: str = "DiamondDev"
 
-CANVAS_DIMS: tuple[int, int] = (1280, 720)
-WINDOW_DIMS: tuple[int, int] = (1280, 720)
+CANVAS_DIMS: tuple[int, int] = (1920, 1080)
+WINDOW_DIMS: tuple[int, int] = (1280//2, 720//2)
 TARGET_FRAMERATE: int = 0

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import pygame
 
+from src import util
 from src.render import spritesheet
 
 class PixelFont():
@@ -103,7 +104,7 @@ class PixelFont():
 
     @staticmethod
     def init_pixelfonts():
-        PixelFont.GLYPHXEL = PixelFont("Glyphxel", Spritesheet(data.load_texture("font/glyphxel.png"), 0, 0, 16, 16), 16, 16,
+        PixelFont.GLYPHXEL = PixelFont("Glyphxel", spritesheet.Spritesheet(util.load_texture("res/glyphxel.png"), 0, 0, 16, 16), 16, 16,
                                     "ABCDEFGHIJKLMNOP" +
                                     "QRSTUVWXYZ ,.!?|" +
                                     "abcdefghijklmnop" +
@@ -122,10 +123,8 @@ class PixelFont():
                                         "'": 4,
                                     })
 
-    @staticmethod
-    def glyphxel() -> PixelFont:
-        if not PixelFont.GLYPHXEL:
-            PixelFont.init_pixelfonts()
-        assert PixelFont.GLYPHXEL
-        return PixelFont.GLYPHXEL
-    
+def glyphxel() -> PixelFont:
+    if not PixelFont.GLYPHXEL:
+        PixelFont.init_pixelfonts()
+    assert PixelFont.GLYPHXEL
+    return PixelFont.GLYPHXEL

@@ -1,6 +1,8 @@
 import pygame
 import typing
 
+from src import util
+
 class Spritesheet():
     def __init__(self, spritesheet_texture: pygame.Surface, padding_x: int = 0, padding_y: int = 0, cell_w: int = 16, cell_h: int = 16) -> None:
         self.spritesheet_texture = spritesheet_texture
@@ -33,4 +35,4 @@ class Spritesheet():
 
     @staticmethod
     def all_of(texture_path_to_load: str, cell_w: int, cell_h: int, xs: int, ys: int, *, padding_x: int = 0, padding_y: int = 0) -> list[pygame.Surface]:
-        return Spritesheet(pygame.image.load(texture_path_to_load).convert_alpha(), padding_x, padding_y, cell_w, cell_h).all(xs, ys)
+        return Spritesheet(util.load_texture(texture_path_to_load), padding_x, padding_y, cell_w, cell_h).all(xs, ys)

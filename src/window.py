@@ -1,11 +1,12 @@
 import pygame
-import asyncio
 
-import pygame
-
+from src import util
 from src import consts
+from src import shared
 from src.render import scene
 from src.render import camera
+from src.render import spritesheet
+from src.render import text
 
 class Window():
     def __init__(self, default_scene: type[scene.Scene]) -> None:
@@ -24,6 +25,9 @@ class Window():
         self.scene_manager = scene.SceneManager(default_scene)
         self.camera = camera.Camera()
 
+    def init_resources(self):
+        text.PixelFont.init_pixelfonts()
+        shared.SPRITESHEET = spritesheet.Spritesheet(util.load_texture('res/sprites.png'))
 
     def start(self):
         self.keep_open = True
@@ -33,7 +37,7 @@ class Window():
             self.event(dt)
             self.update(dt)
             self.draw(self.canvas)
-
+            
             self.window_surface.blit(pygame.transform.scale(self.canvas, self.window_surface.size))
 
             self.window.flip()

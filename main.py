@@ -2,13 +2,13 @@
 import pygame
 
 from src import window
-from src.game import test
+from src.game import game
 
 
 
 if __name__ == "__main__":
     pygame.init()
-    wnd = window.Window(test.TestScene)
+    wnd = window.Window(game.GameScene)
     wnd.start()
     
     

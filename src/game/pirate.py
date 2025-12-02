@@ -13,11 +13,13 @@ class Pirate():
         self.position = pygame.Vector2()
         self.speed = 300.0
         self.health = 100.0
+        self.crouched = False
 
         self.anim_tex = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
             'idle': (4, [(0, 0), (1, 0)]),
             'run': (4, [(0, 1), (1, 1)]),
-            'crouch': (4, [(2, 0)])
+            'crouch-idle': (4, [(2, 0)]),
+            'crouch-run': (4, [(0, 3), (1, 3)])
         })
 
     def draw(self, cam: camera.Camera):
@@ -29,13 +31,25 @@ class Pirate():
     def update(self, dt: float, cam: camera.Camera):
         movement = self.get_movement(dt)
 
-        self.anim_tex.set_anim('idle' if movement == pygame.Vector2() else 'run')
+
+        anim = 'idle'
+        if movement != pygame.Vector2():
+            anim = 'run'
+
+
+        if self.crouched:
+            if anim == 'run':
+                anim = 'crouch-run'
+            else:
+                anim = 'crouch-idle'
+
+        self.anim_tex.set_anim(anim)
         
         if movement.x != 0:
             self.anim_tex.flipped = movement.x < 0
 
         self.anim_tex.tick(dt)
-        self.position += movement.elementwise() * dt * self.speed
+        self.position += movement.elementwise() * dt * self.speed * (0.4 if self.crouched else 1)
 
     def get_movement(self, dt: float) -> pygame.Vector2:
         return pygame.Vector2()
@@ -49,6 +63,8 @@ class PlayerPirate(Pirate):
         if keys[pygame.K_a]: vec.x -= 1
         if keys[pygame.K_s]: vec.y += 1
         if keys[pygame.K_d]: vec.x += 1
+
+        self.crouched = keys[pygame.K_LSHIFT]
 
         if vec.length() != 0:
             vec.normalize_ip()

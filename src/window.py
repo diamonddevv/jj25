@@ -2,7 +2,6 @@ import pygame
 
 from src import util
 from src import consts
-from src import shared
 from src.render import scene
 from src.render import camera
 from src.render import spritesheet
@@ -27,7 +26,6 @@ class Window():
 
     def init_resources(self):
         text.PixelFont.init_pixelfonts()
-        shared.SPRITESHEET = spritesheet.Spritesheet(util.load_texture('res/sprites.png'))
 
     def start(self):
         self.keep_open = True

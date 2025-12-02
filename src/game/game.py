@@ -10,8 +10,10 @@ from src.game import pirate
 
 class GameScene(scene.Scene):
 
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, camera: camera.Camera) -> None:
+        super().__init__(camera)
+        
+        camera.fill_col = 0xFFFFFF
 
         self.ship = ship.Ship()
 
@@ -25,6 +27,8 @@ class GameScene(scene.Scene):
 
     def draw(self, camera: camera.Camera):
         super().draw(camera)
+        self.ship.draw(camera)
+
         for pirate in self.pirates:
             pirate.draw(camera)
 
@@ -32,6 +36,8 @@ class GameScene(scene.Scene):
 
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)
+        self.ship.update(dt, camera)
+
         for pirate in self.pirates:
             pirate.update(dt, camera)
 

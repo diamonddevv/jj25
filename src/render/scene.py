@@ -3,8 +3,8 @@ from src.render import camera
 
 
 class SceneManager():
-    def __init__(self, default: type[Scene]) -> None:
-        self.current = default()
+    def __init__(self, camera: camera.Camera, default: type[Scene]) -> None:
+        self.current = default(camera)
 
 
     def draw_current(self, camera: camera.Camera):
@@ -13,12 +13,12 @@ class SceneManager():
     def update_current(self, dt: float, camera: camera.Camera):
         self.current.update(dt, camera)
 
-    def change(self, scene: type[Scene]):
-        self.current = scene()
+    def change(self, camera: camera.Camera, scene: type[Scene]):
+        self.current = scene(camera)
 
 
 class Scene():
-    def __init__(self) -> None:
+    def __init__(self, camera: camera.Camera) -> None:
         pass
 
     def draw(self, camera: camera.Camera):

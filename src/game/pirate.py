@@ -11,14 +11,15 @@ class Pirate():
     DRAW_SCALE: float = 8
     ANIM_IDLE: str = 'idle'
     ANIM_RUN: str = 'run'
-    ANIM_CROUCH_IDLE: str = 'crouch-idle'
-    ANIM_CROUCH_RUN: str = 'crouch-run'
+    ANIM_CROUCH: str = 'crouch'
+    ANIM_HOLD: str = 'hold'
 
     def __init__(self) -> None:
         self.position = pygame.Vector2()
         self.speed = 300.0
         self.health = 100.0
         self.crouched = False
+        self.held_item: str | None = None
         self.collision_box = pygame.Rect(0, 0, 0, 0)
 
         self.collidables: list[pygame.Rect] = []
@@ -26,8 +27,13 @@ class Pirate():
         self.anim_tex = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
             Pirate.ANIM_IDLE: (4, [(0, 0), (1, 0)]),
             Pirate.ANIM_RUN: (4, [(0, 1), (1, 1)]),
-            Pirate.ANIM_CROUCH_IDLE: (4, [(2, 0)]),
-            Pirate.ANIM_CROUCH_RUN: (4, [(0, 3), (1, 3)])
+            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_IDLE: (4, [(2, 0)]),
+            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_RUN: (4, [(2, 1), (3, 1)]),
+
+            Pirate.ANIM_IDLE + "-" + Pirate.ANIM_HOLD: (4, [(0, 3)]),
+            Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (4, [(0, 3), (1, 3)]),
+            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_IDLE + "-" + Pirate.ANIM_HOLD: (4, [(0, 3)]),
+            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (4, [(0, 3), (1, 3)])
         })
 
     def draw(self, cam: camera.Camera):
@@ -48,10 +54,10 @@ class Pirate():
 
 
         if self.crouched:
-            if anim == Pirate.ANIM_RUN:
-                anim = Pirate.ANIM_CROUCH_RUN
-            else:
-                anim = Pirate.ANIM_CROUCH_IDLE
+            anim = Pirate.ANIM_CROUCH + "-" + anim
+
+        if self.held_item is not None:
+            anim = anim + "-" + Pirate.ANIM_HOLD
 
         self.anim_tex.set_anim(anim)
         
@@ -65,16 +71,23 @@ class Pirate():
 
         for collidable in self.collidables:
             if pygame.Vector2(collidable.center).distance_squared_to(self.position) < 20000:
-                clip = self.collision_box.clip(collidable)
-                cam.with_zindex(lambda s: pygame.draw.rect(s, 'green', cam.w2s_r(clip)), 1000)
+                resolution = util.resolve_collision(collidable, self.collision_box)
+                self.position += resolution
+                
 
     def get_movement(self, dt: float) -> pygame.Vector2:
         return pygame.Vector2()
     
     def track_collidable(self, rect: pygame.Rect):
         self.collidables.append(rect)
+
+
+    @staticmethod
+    def _clamp(x, lo, hi):
+        return max(min(x, hi), lo)
     
 class PlayerPirate(Pirate):
+
     def get_movement(self, dt: float) -> pygame.Vector2:
         keys = pygame.key.get_pressed()
         vec = pygame.Vector2()
@@ -90,3 +103,7 @@ class PlayerPirate(Pirate):
             vec.normalize_ip()
 
         return vec
+    
+    def update(self, dt: float, cam: camera.Camera):
+        super().update(dt, cam)
+        cam.focus = self.position

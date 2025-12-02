@@ -1,7 +1,6 @@
 import pygame
 import math
 
-from src import shared
 from src.render import camera
 
 class Ship():

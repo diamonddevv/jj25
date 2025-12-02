@@ -5,6 +5,7 @@ from src.render import scene
 from src.render import camera
 from src.render import text
 
+from src.game import ship
 from src.game import pirate
 
 class GameScene(scene.Scene):
@@ -12,15 +13,22 @@ class GameScene(scene.Scene):
     def __init__(self) -> None:
         super().__init__()
 
-        self.pirates: list[pirate.Pirate] = [
-            pirate.Pirate() for _ in range(15)
-        ]
+        self.ship = ship.Ship()
+
+        self.pirates: list[pirate.Pirate] = []
         self.pirates.append(pirate.PlayerPirate())
+
+        self.rect = pygame.Rect(0, 0, 100, 100)
+
+        for p in self.pirates:
+            p.track_collidable(self.rect)
 
     def draw(self, camera: camera.Camera):
         super().draw(camera)
         for pirate in self.pirates:
             pirate.draw(camera)
+
+        camera.with_zindex(lambda s: pygame.draw.rect(s, 'blue', camera.w2s_r(self.rect)))
 
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)

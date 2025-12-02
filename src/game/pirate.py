@@ -3,9 +3,12 @@ import math
 import typing
 
 from src import util
+from src import event
 from src.render import spritesheet
 from src.render import camera
 from src.render import animate
+
+from src.game import item
 
 class Pirate():
     DRAW_SCALE: float = 8
@@ -15,11 +18,11 @@ class Pirate():
     ANIM_HOLD: str = 'hold'
 
     def __init__(self) -> None:
-        self.position = pygame.Vector2()
+        self.position = pygame.Vector2(100, 100)
         self.speed = 300.0
         self.health = 100.0
         self.crouched = False
-        self.held_item: str | None = None
+        self.held_item: item.Item | None = None
         self.collision_box = pygame.Rect(0, 0, 0, 0)
 
         self.collidables: list[pygame.Rect] = []
@@ -42,16 +45,15 @@ class Pirate():
             self.position, True, scale=Pirate.DRAW_SCALE
         )
 
-        cam.with_zindex(lambda s: pygame.draw.rect(s, 'red', cam.w2s_r(self.collision_box), 8), 10)
+        if self.held_item is not None:
+            self.held_item.pos = self.position + pygame.Vector2(8 * (-1 if self.anim_tex.flipped else 1), -40)
 
     def update(self, dt: float, cam: camera.Camera):
         movement = self.get_movement(dt)
 
-
         anim = Pirate.ANIM_IDLE
         if movement != pygame.Vector2():
             anim = Pirate.ANIM_RUN
-
 
         if self.crouched:
             anim = Pirate.ANIM_CROUCH + "-" + anim
@@ -107,3 +109,14 @@ class PlayerPirate(Pirate):
     def update(self, dt: float, cam: camera.Camera):
         super().update(dt, cam)
         cam.focus = self.position
+
+        pressed = pygame.key.get_just_pressed()
+        if pressed[pygame.K_SPACE]:
+            if self.held_item is None:
+                pygame.event.post(pygame.event.Event(event.PIRATE_TRY_PICKUP, {
+                    'pirate': self
+                }))
+            else:
+                self.held_item.pos = self.position.copy()
+                self.held_item.held = False
+                self.held_item = None

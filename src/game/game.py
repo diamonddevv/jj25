@@ -1,10 +1,10 @@
 import pygame
 import typing
 
+from src import event
 from src.render import scene
 from src.render import camera
-from src.render import text
-
+from src.game import item
 from src.game import ship
 from src.game import pirate
 
@@ -13,17 +13,21 @@ class GameScene(scene.Scene):
     def __init__(self, camera: camera.Camera) -> None:
         super().__init__(camera)
         
-        camera.fill_col = 0xFFFFFF
+        camera.fill_col = 0x2890dc
 
         self.ship = ship.Ship()
-
         self.pirates: list[pirate.Pirate] = []
+        self.items: list[item.Item] = [item.Item(0) for _ in range(10)]
+
+        for i in self.items:
+            event.CallbackManager.register(event.PIRATE_TRY_PICKUP, lambda dict: self._try_pickup_callback(i, dict['pirate']))
+
         self.pirates.append(pirate.PlayerPirate())
 
-        self.rect = pygame.Rect(0, 0, 100, 100)
+        for collider in self.ship.map_colliders:
+            for p in self.pirates:
+                p.track_collidable(collider)
 
-        for p in self.pirates:
-            p.track_collidable(self.rect)
 
     def draw(self, camera: camera.Camera):
         super().draw(camera)
@@ -32,7 +36,8 @@ class GameScene(scene.Scene):
         for pirate in self.pirates:
             pirate.draw(camera)
 
-        camera.with_zindex(lambda s: pygame.draw.rect(s, 'blue', camera.w2s_r(self.rect)))
+        for item in self.items:
+            item.draw(camera)
 
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)
@@ -40,6 +45,16 @@ class GameScene(scene.Scene):
 
         for pirate in self.pirates:
             pirate.update(dt, camera)
+
+        for item in self.items:
+            item.update(dt, camera)
+
+
+    def _try_pickup_callback(self, item: item.Item, pirate: pirate.Pirate):
+        if pirate.held_item is None:
+            if item.pos.distance_squared_to(pirate.position) <= 80_000:
+                pirate.held_item = item
+                item.held = True
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

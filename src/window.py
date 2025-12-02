@@ -1,6 +1,7 @@
 import pygame
 
 from src import util
+from src import event
 from src import consts
 from src.render import scene
 from src.render import camera
@@ -56,3 +57,7 @@ class Window():
         for e in pygame.event.get():
             if e.type == pygame.QUIT:
                 self.keep_open = False
+
+            if e.type in event.CallbackManager.CALLBACKS:
+                for o in event.CallbackManager.CALLBACKS[e.type]:
+                    o(e.dict)

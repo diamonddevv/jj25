@@ -24,7 +24,7 @@ class Camera():
         return self.w2s(pygame.Vector2(x, y))
     
     def w2s_r(self, rect: pygame.Rect) -> pygame.Rect:
-        return pygame.Rect(self.w2s_up(*rect.topleft), pygame.Vector2(rect.size))
+        return pygame.Rect(self.w2s_up(*rect.topleft), pygame.Vector2(rect.size) * self.zoom)
     
     def scale_zoom(self, x: float) -> float:
         return x * self.zoom

@@ -19,16 +19,16 @@ class Pirate():
     ANIM_CROUCH: str = 'crouch'
     ANIM_HOLD: str = 'hold'
 
-    def __init__(self) -> None:
+    def __init__(self, interactables: list[interact.Interactable]) -> None:
         self.position = pygame.Vector2(100, 100)
         self.speed = 300.0
-        self.pickup_distance = 80
+        self.reach = 80
         self.health = 100.0
         self.crouched = False
         self.held_item: item.Item | None = None
         self.collision_box = pygame.Rect(0, 0, 0, 0)
-        self.closest_interactable: interact.Interactable | None = None
 
+        self.interactables: list[interact.Interactable] = interactables
         self.collidables: list[typing.Callable[[], pygame.Rect]] = []
 
         self.anim_tex = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
@@ -49,8 +49,12 @@ class Pirate():
             self.position, True, scale=consts.DRAW_SCALE
         )
 
+        if consts.DRAW_COLLISION_BOXES:
+            cam.with_zindex(lambda s: pygame.draw.rect(s, 'red', cam.w2s_r(self.collision_box), 8), 10)
+
         if self.held_item is not None:
-            self.held_item.pos = self.position + pygame.Vector2(8 * (-1 if self.anim_tex.flipped else 1), -64)
+            self.held_item.flip_texture = self.anim_tex.flipped
+            self.held_item.pos = self.position + pygame.Vector2(8 * (-1 if self.anim_tex.flipped else 1), -8 * consts.DRAW_SCALE)
 
     def update(self, dt: float, cam: camera.Camera):
         movement = self.get_movement(dt)
@@ -91,6 +95,8 @@ class Pirate():
     def track_collidable_thing[T](self, t: T, func: typing.Callable[[T], pygame.Rect]):
         self.collidables.append(lambda: func(t))
 
+    def closest_interactable(self) -> interact.Interactable:
+        return sorted(self.interactables, key=lambda i: self.position.distance_squared_to(i.pos))[0]
 
     @staticmethod
     def _clamp(x, lo, hi):
@@ -98,16 +104,23 @@ class Pirate():
     
 class PlayerPirate(Pirate):
 
+    KEY_UP: int = pygame.K_w
+    KEY_DOWN: int = pygame.K_s
+    KEY_LEFT: int = pygame.K_a
+    KEY_RIGHT: int = pygame.K_d
+    KEY_CROUCH: int = pygame.K_LSHIFT
+    KEY_INTERACT: int = pygame.K_SPACE
+
     def get_movement(self, dt: float) -> pygame.Vector2:
         keys = pygame.key.get_pressed()
         vec = pygame.Vector2()
 
-        if keys[pygame.K_w]: vec.y -= 1
-        if keys[pygame.K_a]: vec.x -= 1
-        if keys[pygame.K_s]: vec.y += 1
-        if keys[pygame.K_d]: vec.x += 1
+        if keys[PlayerPirate.KEY_UP]: vec.y -= 1
+        if keys[PlayerPirate.KEY_LEFT]: vec.x -= 1
+        if keys[PlayerPirate.KEY_DOWN]: vec.y += 1
+        if keys[PlayerPirate.KEY_RIGHT]: vec.x += 1
 
-        self.crouched = keys[pygame.K_LSHIFT]
+        self.crouched = keys[PlayerPirate.KEY_CROUCH]
 
         if vec.length() != 0:
             vec.normalize_ip()
@@ -125,18 +138,37 @@ class PlayerPirate(Pirate):
                     pygame.Vector2(20, 20)
                 ), consts.HUD_LAYER
             )
+
+        # colliders
+        if consts.DRAW_COLLISION_BOXES:
+            for provider in self.collidables:
+                cam.with_zindex_provider(lambda s, r: pygame.draw.rect(s, 'green', cam.w2s_r(r), 8), provider(), 10)
     
     def update(self, dt: float, cam: camera.Camera):
         super().update(dt, cam)
-        cam.focus = self.position
+
+        for i in self.interactables:
+            i.highlight = False
+        if self.held_item is not None:
+            closest = self.closest_interactable()
+            closest.highlight = self.position.distance_squared_to(closest.pos) <= self.reach ** 2
 
         pressed = pygame.key.get_just_pressed()
-        if pressed[pygame.K_SPACE]:
+        if pressed[PlayerPirate.KEY_INTERACT]:
             if self.held_item is None:
                 pygame.event.post(pygame.event.Event(event.PIRATE_INTERACT, {
                     'pirate': self
                 }))
             else:
-                self.held_item.pos = self.position.copy() + pygame.Vector2(0, 16)
-                self.held_item.held = False
-                self.held_item = None
+                closest = self.closest_interactable()
+                if closest.highlight and isinstance(closest, interact.Cannon):
+                    pygame.event.post(pygame.event.Event(event.FIRE_ITEM, {
+                        'pirate': self,
+                        'item': self.held_item,
+                        'cannon': closest,
+                    }))
+                    self.held_item = None
+                else:
+                    self.held_item.pos = self.position.copy() + pygame.Vector2(0, 16)
+                    self.held_item.held = False
+                    self.held_item = None

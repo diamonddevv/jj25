@@ -7,18 +7,19 @@ from src.render import camera
 class MapRenderer():
     type MapData = tuple[
         int, int, int,
-        list[tuple[pygame.Surface, pygame.Rect | None] | None]
+        list[tuple[pygame.Surface | None, pygame.Rect | None] | None]
     ]
 
     @staticmethod
     def compile_map(spritesheet: spritesheet.Spritesheet, keys: dict[str, tuple[tuple[int, int] | None, pygame.Rect | None]], shape: str, width: int) -> MapData:
-        tiles: list[tuple[pygame.Surface, pygame.Rect | None] | None] = []
+        tiles: list[tuple[pygame.Surface | None, pygame.Rect | None] | None] = []
 
         for char in shape:
-            pos = keys[char][0]
-            if pos is not None:
+            pos, rect = keys[char]
+            if pos is not None or rect is not None:
+                
                 tiles.append(
-                    (spritesheet.get_cell(*pos), keys[char][1])
+                    (None if pos is None else spritesheet.get_cell(*pos), rect)
                 )
             else:
                 tiles.append(None)
@@ -57,7 +58,8 @@ class MapRenderer():
         for pair in tiles:
             if pair is not None:
                 tile, _ = pair
-                cam.blit(tile, pos, False, scale, zindex=zindex)
+                if tile is not None:
+                    cam.blit(tile, pos, False, scale, zindex=zindex)
                 
             pos.x += tw * scale
             idx += 1

@@ -1,6 +1,7 @@
 import pygame
 import typing
 
+from src import consts
 from src import event
 from src.render import scene
 from src.render import camera
@@ -19,17 +20,18 @@ class GameScene(scene.Scene):
         self.ship = ship.Ship()
         self.pirates: list[pirate.Pirate] = []
         self.items: list[item.Item] = [item.Item(i % 3, pygame.Vector2(200 + 80 * i, 400)) for i in range(10)]
-        self.cannons: list[interact.Cannon] = [interact.Cannon(pygame.Vector2(600 + 100 * i, 200)) for i in range(3)]
+        self.interactables: list[interact.Interactable] = [interact.Cannon(pygame.Vector2(600 + 100 * i, 200)) for i in range(3)]
 
         event.CallbackManager.register(event.PIRATE_INTERACT, lambda dict: self._try_pickup_callback(dict['pirate']))
+        event.CallbackManager.register(event.FIRE_ITEM, lambda dict: self._fired_item(dict['pirate'], dict['item'], dict['cannon']))
 
-        self.pirates.append(pirate.PlayerPirate())
+        self.pirates.append(pirate.PlayerPirate(self.interactables))
 
         for collider in self.ship.map_colliders:
             for p in self.pirates:
                 p.track_collidable(collider)
 
-        for c in self.cannons:
+        for c in self.interactables:
             for p in self.pirates:
                 p.track_collidable_thing(c, lambda c: c.collider)
 
@@ -44,30 +46,36 @@ class GameScene(scene.Scene):
         for item in self.items:
             item.draw(camera)
 
-        for cannon in self.cannons:
+        for cannon in self.interactables:
             cannon.draw(camera)
 
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)
         self.ship.update(dt, camera)
 
+        camera.focus = pygame.Vector2(16 * consts.DRAW_SCALE * 16, 0)
+
         for pirate in self.pirates:
             pirate.update(dt, camera)
 
         for item in self.items:
-            if not item.held: # it is up to whatever is holding the item to draw it
-                item.update(dt, camera)
+            item.update(dt, camera)
 
-        for cannon in self.cannons:
+        for cannon in self.interactables:
             cannon.update(dt, camera)
 
 
     def _try_pickup_callback(self, pirate: pirate.Pirate):
         for item in self.items:
             if pirate.held_item is None:
-                if item.pos.distance_squared_to(pirate.position) <= pirate.pickup_distance ** 2:
+                if item.pos.distance_squared_to(pirate.position) <= pirate.reach ** 2:
                     pirate.held_item = item
                     item.held = True
+
+    def _fired_item(self, pirate: pirate.Pirate, item: item.Item, cannon: interact.Cannon):
+        cannon.fire(item)
+        pirate.held_item = None
+        event.schedule(lambda: self.items.remove(item), 5)
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

@@ -34,6 +34,11 @@ class Camera():
         layer[0].append(op)
         self._frame_blits[zindex] = layer
 
+    def with_zindex_provider[T](self, op: typing.Callable[[pygame.Surface, T], typing.Any], t: T, zindex: int = 0):
+        layer = self._frame_blits.get(zindex, ([], []))
+        layer[0].append(lambda s: op(s, t))
+        self._frame_blits[zindex] = layer
+
     def with_zindex_blit(self, params: _BlitParams, zindex: int = 0):
         layer = self._frame_blits.get(zindex, ([], []))
         layer[1].append(params)

@@ -8,9 +8,11 @@ class AnimatedTexture():
         self.sprsht = sprsht
         self.anims = anims
 
+        self.last_anim = ''
         self.selected_anim = ''
         self.frame = 0
         self.timer = 0.0
+        self.oneshot = False
 
         self.flipped = False
 
@@ -27,12 +29,17 @@ class AnimatedTexture():
             self.frame += 1
             if self.frame >= len(self.anims[self.selected_anim][1]):
                 self.frame = 0
+                if self.oneshot:
+                    self.selected_anim = self.last_anim
+                    self.oneshot = False
 
     def get_frame(self) -> pygame.Surface:
         return pygame.transform.flip(self.sprsht.get_cell(*self.anims[self.selected_anim][1][self.frame]), self.flipped, False)
     
-    def set_anim(self, key: str):
+    def set_anim(self, key: str, oneshot: bool = False):
         if key != self.selected_anim:
+            self.last_anim = self.selected_anim
             self.selected_anim = key
             self.frame = 0
             self.timer = 0.0
+            self.oneshot = oneshot

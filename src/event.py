@@ -10,4 +10,4 @@ class CallbackManager():
         callbacks.append(op)
         CallbackManager.CALLBACKS[id] = callbacks
 
-PIRATE_TRY_PICKUP: int = pygame.event.custom_type()
+PIRATE_INTERACT: int = pygame.event.custom_type()

@@ -7,6 +7,7 @@ from src.render import camera
 from src.game import item
 from src.game import ship
 from src.game import pirate
+from src.game import interact
 
 class GameScene(scene.Scene):
 
@@ -17,16 +18,20 @@ class GameScene(scene.Scene):
 
         self.ship = ship.Ship()
         self.pirates: list[pirate.Pirate] = []
-        self.items: list[item.Item] = [item.Item(0) for _ in range(10)]
+        self.items: list[item.Item] = [item.Item(i % 3, pygame.Vector2(200 + 80 * i, 400)) for i in range(10)]
+        self.cannons: list[interact.Cannon] = [interact.Cannon(pygame.Vector2(600 + 100 * i, 200)) for i in range(3)]
 
-        for i in self.items:
-            event.CallbackManager.register(event.PIRATE_TRY_PICKUP, lambda dict: self._try_pickup_callback(i, dict['pirate']))
+        event.CallbackManager.register(event.PIRATE_INTERACT, lambda dict: self._try_pickup_callback(dict['pirate']))
 
         self.pirates.append(pirate.PlayerPirate())
 
         for collider in self.ship.map_colliders:
             for p in self.pirates:
                 p.track_collidable(collider)
+
+        for c in self.cannons:
+            for p in self.pirates:
+                p.track_collidable_thing(c, lambda c: c.collider)
 
 
     def draw(self, camera: camera.Camera):
@@ -39,6 +44,9 @@ class GameScene(scene.Scene):
         for item in self.items:
             item.draw(camera)
 
+        for cannon in self.cannons:
+            cannon.draw(camera)
+
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)
         self.ship.update(dt, camera)
@@ -47,14 +55,19 @@ class GameScene(scene.Scene):
             pirate.update(dt, camera)
 
         for item in self.items:
-            item.update(dt, camera)
+            if not item.held: # it is up to whatever is holding the item to draw it
+                item.update(dt, camera)
+
+        for cannon in self.cannons:
+            cannon.update(dt, camera)
 
 
-    def _try_pickup_callback(self, item: item.Item, pirate: pirate.Pirate):
-        if pirate.held_item is None:
-            if item.pos.distance_squared_to(pirate.position) <= 80_000:
-                pirate.held_item = item
-                item.held = True
+    def _try_pickup_callback(self, pirate: pirate.Pirate):
+        for item in self.items:
+            if pirate.held_item is None:
+                if item.pos.distance_squared_to(pirate.position) <= pirate.pickup_distance ** 2:
+                    pirate.held_item = item
+                    item.held = True
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

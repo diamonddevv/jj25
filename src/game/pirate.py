@@ -3,15 +3,17 @@ import math
 import typing
 
 from src import util
+from src import consts
 from src import event
 from src.render import spritesheet
 from src.render import camera
 from src.render import animate
+from src.render import text
 
 from src.game import item
+from src.game import interact
 
 class Pirate():
-    DRAW_SCALE: float = 8
     ANIM_IDLE: str = 'idle'
     ANIM_RUN: str = 'run'
     ANIM_CROUCH: str = 'crouch'
@@ -20,12 +22,14 @@ class Pirate():
     def __init__(self) -> None:
         self.position = pygame.Vector2(100, 100)
         self.speed = 300.0
+        self.pickup_distance = 80
         self.health = 100.0
         self.crouched = False
         self.held_item: item.Item | None = None
         self.collision_box = pygame.Rect(0, 0, 0, 0)
+        self.closest_interactable: interact.Interactable | None = None
 
-        self.collidables: list[pygame.Rect] = []
+        self.collidables: list[typing.Callable[[], pygame.Rect]] = []
 
         self.anim_tex = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
             Pirate.ANIM_IDLE: (4, [(0, 0), (1, 0)]),
@@ -42,11 +46,11 @@ class Pirate():
     def draw(self, cam: camera.Camera):
         cam.blit(
             self.anim_tex.get_frame(),
-            self.position, True, scale=Pirate.DRAW_SCALE
+            self.position, True, scale=consts.DRAW_SCALE
         )
 
         if self.held_item is not None:
-            self.held_item.pos = self.position + pygame.Vector2(8 * (-1 if self.anim_tex.flipped else 1), -40)
+            self.held_item.pos = self.position + pygame.Vector2(8 * (-1 if self.anim_tex.flipped else 1), -64)
 
     def update(self, dt: float, cam: camera.Camera):
         movement = self.get_movement(dt)
@@ -67,11 +71,12 @@ class Pirate():
             self.anim_tex.flipped = movement.x < 0
 
         self.anim_tex.tick(dt)
-        self.collision_box = self.anim_tex.get_frame().get_rect(center=self.position).scale_by(Pirate.DRAW_SCALE)
+        self.collision_box = self.anim_tex.get_frame().get_rect(center=self.position).scale_by(consts.DRAW_SCALE)
 
-        self.position += movement.elementwise() * dt * self.speed * (0.4 if self.crouched else 1)
+        self.position += movement.elementwise() * dt * self.speed * (0.6 if self.crouched or self.held_item is not None else 1)
 
-        for collidable in self.collidables:
+        for provider in self.collidables:
+            collidable = provider()
             if pygame.Vector2(collidable.center).distance_squared_to(self.position) < 20000:
                 resolution = util.resolve_collision(collidable, self.collision_box)
                 self.position += resolution
@@ -81,7 +86,10 @@ class Pirate():
         return pygame.Vector2()
     
     def track_collidable(self, rect: pygame.Rect):
-        self.collidables.append(rect)
+        self.collidables.append(lambda: rect)
+
+    def track_collidable_thing[T](self, t: T, func: typing.Callable[[T], pygame.Rect]):
+        self.collidables.append(lambda: func(t))
 
 
     @staticmethod
@@ -106,6 +114,18 @@ class PlayerPirate(Pirate):
 
         return vec
     
+    def draw(self, cam: camera.Camera):
+        super().draw(cam)
+
+        # hud
+        if self.held_item is not None:
+            cam.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Held Item: {self.held_item.name()}", 2),
+                    pygame.Vector2(20, 20)
+                ), consts.HUD_LAYER
+            )
+    
     def update(self, dt: float, cam: camera.Camera):
         super().update(dt, cam)
         cam.focus = self.position
@@ -113,10 +133,10 @@ class PlayerPirate(Pirate):
         pressed = pygame.key.get_just_pressed()
         if pressed[pygame.K_SPACE]:
             if self.held_item is None:
-                pygame.event.post(pygame.event.Event(event.PIRATE_TRY_PICKUP, {
+                pygame.event.post(pygame.event.Event(event.PIRATE_INTERACT, {
                     'pirate': self
                 }))
             else:
-                self.held_item.pos = self.position.copy()
+                self.held_item.pos = self.position.copy() + pygame.Vector2(0, 16)
                 self.held_item.held = False
                 self.held_item = None

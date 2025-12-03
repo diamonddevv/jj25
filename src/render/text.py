@@ -101,6 +101,12 @@ class PixelFont():
                 width_pos += width
 
         return surface
+    
+    def render_adv(self, text: str, scale: float, color: pygame.typing.ColorLike | None = None) -> pygame.Surface:
+        s = pygame.transform.scale_by(self.render(text), scale)
+        if color is not None:
+            s.fill(color, special_flags=pygame.BLEND_MULT)
+        return s
 
     @staticmethod
     def init_pixelfonts():

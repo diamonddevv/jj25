@@ -1,7 +1,12 @@
 import pygame
+import typing
 
 from src import consts
 from src import event
+
+if typing.TYPE_CHECKING:
+    from src.game import pirate
+    from src.game import interact
 
 class Fireable():
     FIRE_SPEED: float = 400
@@ -17,9 +22,10 @@ class Fireable():
 
     def show(self):
         self.hidden = False
+        
 
-    def _start_fire_anim(self, position: pygame.Vector2):
-        self.set_position(position.copy() - pygame.Vector2(0, consts.DRAW_SCALE * 4))
+    def fire(self, firer: pirate.Pirate, cannon: interact.Cannon):
+        self.set_position(cannon.position.copy() - pygame.Vector2(0, consts.DRAW_SCALE * 4))
         self.fired = True
 
     def set_position(self, position: pygame.Vector2):

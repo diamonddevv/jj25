@@ -24,7 +24,7 @@ class CreditsScene(menu.MenuScene):
 
      Special Thanks to:          Made with:
             - Team impROVise        - pygame-ce 2.5.6
-                                   - Python 3.13.5
+                                   - Python 3.14.1
                                    - Aseprite
                                    - Microsoft VSCode
                                    - JSFXR

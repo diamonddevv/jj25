@@ -1,10 +1,13 @@
 import pygame
 
 from src import util
+from src import event
 from src import consts
 from src.render import camera
 from src.render import spritesheet
 from src.game import fireable
+from src.game import pirate
+from src.game import interact
 
 class Item(fireable.Fireable):
     type _ItemEntry = tuple[
@@ -47,6 +50,13 @@ class Item(fireable.Fireable):
     
     def set_position(self, position: pygame.Vector2):
         self.position = position
+
+    def fire(self, firer: pirate.Pirate, cannon: interact.Cannon):
+        super().fire(firer, cannon)
+        def _r():
+            del firer.manager.items[firer.held_item_idx]
+        firer.held_item_idx = -1
+        event.schedule(_r, 5)
     
     
 

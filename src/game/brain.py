@@ -5,7 +5,7 @@ import typing
 
 from src.render import camera
 
-type _TaskProvider[R] = typing.Callable[[R], Task[R]]
+type _TaskProvider[T] = type[Task[T]]
 
 class Brain[T]():
 

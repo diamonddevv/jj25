@@ -11,7 +11,7 @@ from src.game import fireable
 
 class Interactable():
     def __init__(self, pos: pygame.Vector2 = pygame.Vector2()) -> None:
-        self.pos = pos
+        self.position = pos
         self.collider = pygame.Rect(0, 0, 0, 0)
         self.highlight = False
 
@@ -30,7 +30,7 @@ class Cannon(Interactable):
 
     def __init__(self, pos: pygame.Vector2 = pygame.Vector2()) -> None:
         super().__init__(pos)
-        self.spritesheet = spritesheet.Spritesheet(util.load_texture('res/cannon.png'))
+        self.spritesheet = spritesheet.Spritesheet(util.load_texture('res/interactable.png'))
         self.collider_base = pygame.Rect(0, -8, 12, 5)
         self.anim_tex = animate.AnimatedTexture(self.spritesheet,
                                                 {
@@ -43,7 +43,7 @@ class Cannon(Interactable):
 
     def draw(self, cam: camera.Camera):
         cam.blit(
-            self.anim_tex.get_frame(), self.pos, scale=consts.DRAW_SCALE,zindex=-2
+            self.anim_tex.get_frame(), self.position, scale=consts.DRAW_SCALE,zindex=-2
         )
 
     def update(self, dt: float, cam: camera.Camera):
@@ -54,7 +54,7 @@ class Cannon(Interactable):
         if self.cooldown > 0:
             self.cooldown -= dt
         self.anim_tex.tick(dt)
-        self.collider = pygame.Rect(self.pos - pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE / 2 + pygame.Vector2(self.collider_base.topleft) * consts.DRAW_SCALE, pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE)
+        self.collider = pygame.Rect(self.position - pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE / 2 + pygame.Vector2(self.collider_base.topleft) * consts.DRAW_SCALE, pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE)
 
     def fire(self, fireable: fireable.Fireable):
         if self.cooldown <= 0:
@@ -64,5 +64,5 @@ class Cannon(Interactable):
             event.sequence([
                 (fireable.hide, 0.0),
                 (fireable.show, 4/6),
-                (lambda: fireable._start_fire_anim(self.pos), 0.0)
+                (lambda: fireable._start_fire_anim(self.position), 0.0)
             ])

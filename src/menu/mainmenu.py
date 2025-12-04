@@ -27,7 +27,7 @@ class MainMenu(menu.MenuScene):
                       lambda: consts.SUBTITLE, 2, 0x000000, centered=True)
         )
         self.container.add(
-            ui.UiPirate(pygame.Vector2(128, consts.CANVAS_DIMS[1] - 64), pirate.Pirate([]))
+            ui.UiPirate(pygame.Vector2(128, consts.CANVAS_DIMS[1] - 64), pirate.Pirate([], None, None, None, None)) # type: ignore
         )
         self.container.add(
             ui.UiButton(

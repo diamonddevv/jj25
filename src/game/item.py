@@ -16,6 +16,7 @@ class Item(fireable.Fireable):
         0: ((0, 0), "Cannonball"),
         1: ((1, 0), "Bottle o' Rum"),
         2: ((2, 0), "Parrot"),
+        3: ((3, 0), "Wood"),
     }
 
     

@@ -48,5 +48,10 @@ class Ship():
     def draw(self, cam: camera.Camera):
         map.MapRenderer.draw_map(cam, pygame.Vector2(), self.map_data, consts.DRAW_SCALE)
 
+    def get_tile_center(self, cam: camera.Camera, x: int, y: int) -> pygame.Vector2:
+        return map.MapRenderer.get_tile_center(
+            x, y, cam, pygame.Vector2(), self.map_data, consts.DRAW_SCALE
+        )
+
     def update(self, dt: float, cam: camera.Camera):
         pass

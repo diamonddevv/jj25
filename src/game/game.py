@@ -5,6 +5,7 @@ from src import consts
 from src import event
 from src.render import scene
 from src.render import camera
+from src.render import text
 from src.game import item
 from src.game import ship
 from src.game import pirate
@@ -18,14 +19,15 @@ class GameScene(scene.Scene):
         camera.fill_col = 0x2890dc
 
         self.ship = ship.Ship()
-        self.pirates: list[pirate.Pirate] = []
-        self.items: list[item.Item] = [item.Item(i % 3, pygame.Vector2(200 + 80 * i, 400)) for i in range(10)]
-        self.interactables: list[interact.Interactable] = [interact.Cannon(pygame.Vector2(600 + 100 * i, 200)) for i in range(3)]
+        self.items: list[item.Item] = [item.Item(0, self.ship.get_tile_center(camera, 2 + i, 4)) for i in range(10)]
+        self.interactables: list[interact.Interactable] = [interact.Cannon(self.ship.get_tile_center(camera, 2 + 3*i, 1)) for i in range(10)]
+        self.pirates: list[pirate.Pirate] = [pirate.NPCPirate(self.interactables, self.items, camera, self.ship, self.ship.get_tile_center(camera, 3, 3)) for _ in range(7)]
 
         event.CallbackManager.register(event.PICKUP_ITEM, lambda dict: self._try_pickup_callback(dict['pirate']))
         event.CallbackManager.register(event.FIRE_CANNON, lambda dict: self._fire_cannon(dict['pirate'], dict['item'], dict['cannon']))
 
-        self.pirates.append(pirate.PlayerPirate(self.interactables))
+        self.player = pirate.PlayerPirate(self.interactables, self.items, camera, self.ship, self.ship.get_tile_center(camera, 3, 3))
+        self.pirates.append(self.player)
 
         for collider in self.ship.map_colliders:
             for p in self.pirates:
@@ -48,6 +50,24 @@ class GameScene(scene.Scene):
 
         for cannon in self.interactables:
             cannon.draw(camera)
+
+        # hud
+        camera.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Mateys: {len(self.pirates)}", 2),
+                    pygame.Vector2(20, 20)
+                ), zindex=consts.HUD_LAYER
+            )
+
+        if self.player.held_item is not None:
+            camera.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Held Item: {self.player.held_item.name()}", 2),
+                    pygame.Vector2(20, 60)
+                ), zindex=consts.HUD_LAYER
+            )
+        
+        
 
     def update(self, dt: float, camera: camera.Camera):
         super().update(dt, camera)
@@ -74,6 +94,8 @@ class GameScene(scene.Scene):
                         item.held = True
 
     def _fire_cannon(self, pirate: pirate.Pirate, item: item.Item | None, cannon: interact.Cannon):
+        if item is None:
+            pirate.anim_tex.set_anim(pirate.ANIM_CROUCH + "-" + pirate.ANIM_IDLE)
         cannon.fire(item if item is not None else pirate)
         if item is not None:
             pirate.held_item = None

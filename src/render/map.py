@@ -67,4 +67,12 @@ class MapRenderer():
                 idx = 0
                 pos.x = topleft.x
                 pos.y += th * scale
-            
+
+    @staticmethod
+    def get_tile_center(tile_x: int, tile_y: int, cam: camera.Camera, pos: pygame.Vector2, data: MapData, scale: float) -> pygame.Vector2:
+        size, tw, th, tiles = data
+
+        return pygame.Vector2(
+            pos.x + ((tile_x + 0.5) * tw) * scale, 
+            pos.y + ((tile_y + 0.5) * th) * scale
+            )

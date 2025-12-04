@@ -22,8 +22,8 @@ class GameScene(scene.Scene):
         self.items: list[item.Item] = [item.Item(i % 3, pygame.Vector2(200 + 80 * i, 400)) for i in range(10)]
         self.interactables: list[interact.Interactable] = [interact.Cannon(pygame.Vector2(600 + 100 * i, 200)) for i in range(3)]
 
-        event.CallbackManager.register(event.PIRATE_INTERACT, lambda dict: self._try_pickup_callback(dict['pirate']))
-        event.CallbackManager.register(event.FIRE_ITEM, lambda dict: self._fired_item(dict['pirate'], dict['item'], dict['cannon']))
+        event.CallbackManager.register(event.PICKUP_ITEM, lambda dict: self._try_pickup_callback(dict['pirate']))
+        event.CallbackManager.register(event.FIRE_CANNON, lambda dict: self._fire_cannon(dict['pirate'], dict['item'], dict['cannon']))
 
         self.pirates.append(pirate.PlayerPirate(self.interactables))
 
@@ -68,14 +68,22 @@ class GameScene(scene.Scene):
     def _try_pickup_callback(self, pirate: pirate.Pirate):
         for item in self.items:
             if pirate.held_item is None:
-                if item.pos.distance_squared_to(pirate.position) <= pirate.reach ** 2:
-                    pirate.held_item = item
-                    item.held = True
+                if item.position.distance_squared_to(pirate.position) <= pirate.reach ** 2:
+                    if item.can_be_picked_up():
+                        pirate.held_item = item
+                        item.held = True
 
-    def _fired_item(self, pirate: pirate.Pirate, item: item.Item, cannon: interact.Cannon):
-        cannon.fire(item)
-        pirate.held_item = None
-        event.schedule(lambda: self.items.remove(item), 5)
+    def _fire_cannon(self, pirate: pirate.Pirate, item: item.Item | None, cannon: interact.Cannon):
+        cannon.fire(item if item is not None else pirate)
+        if item is not None:
+            pirate.held_item = None
+            event.schedule(lambda: self.items.remove(item), 5)
+        else:
+            def _r():
+                pirate.position = pygame.Vector2(200, 200)
+                pirate.fired = False
+                pirate.sprite_rotation = 0.0
+            event.schedule(_r, 5)
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

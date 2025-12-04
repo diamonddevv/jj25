@@ -6,7 +6,7 @@ from src import consts
 from src.render import spritesheet
 from src.render import animate
 from src.render import camera
-from src.game import item
+from src.game import fireable
 
 
 class Interactable():
@@ -56,13 +56,13 @@ class Cannon(Interactable):
         self.anim_tex.tick(dt)
         self.collider = pygame.Rect(self.pos - pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE / 2 + pygame.Vector2(self.collider_base.topleft) * consts.DRAW_SCALE, pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE)
 
-    def fire(self, item: item.Item):
+    def fire(self, fireable: fireable.Fireable):
         if self.cooldown <= 0:
             self.anim_tex.set_anim(Cannon.ANIM_FIRE, oneshot=True)
             self.anim_tex.last_anim = Cannon.ANIM_IDLE
             self.cooldown = Cannon.COOLDOWN
             event.sequence([
-                (item.hide, 0.0),
-                (item.show, 4/6),
-                (lambda: item._start_fire_anim(self.pos), 0.0)
+                (fireable.hide, 0.0),
+                (fireable.show, 4/6),
+                (lambda: fireable._start_fire_anim(self.pos), 0.0)
             ])

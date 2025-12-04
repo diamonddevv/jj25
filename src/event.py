@@ -31,5 +31,6 @@ def sequence(steps: list[tuple[typing.Callable, float]]):
     thread.start()
 
 
-PIRATE_INTERACT: int = pygame.event.custom_type()
-FIRE_ITEM: int = pygame.event.custom_type()
+CHANGE_SCENE: int = pygame.event.custom_type()
+PICKUP_ITEM: int = pygame.event.custom_type()
+FIRE_CANNON: int = pygame.event.custom_type()

@@ -22,8 +22,10 @@ class Window():
         self.clock = pygame.Clock()
         self.keep_open = False
 
-        self.camera = camera.Camera()
+        self.camera = camera.Camera(self.window)
         self.scene_manager = scene.SceneManager(self.camera, default_scene)
+
+        event.CallbackManager.register(event.CHANGE_SCENE, lambda d: self.scene_manager.change(self.camera, d['scene']))
 
     def init_resources(self):
         text.PixelFont.init_pixelfonts()

@@ -6,6 +6,7 @@ from src.render import spritesheet
 
 class PixelFont():
     GLYPHXEL: PixelFont | None = None
+    SF_SANS: PixelFont | None = None
 
     def __init__(self, 
                  name: str, 
@@ -128,9 +129,27 @@ class PixelFont():
                                         ',': 4,
                                         "'": 4,
                                     })
+        
+        PixelFont.SF_SANS = PixelFont("SF Sans", spritesheet.Spritesheet(util.load_texture("res/sf-sans.png"), 0, 0, 16, 16), 16, 16, 
+                "ABCDEFGHIJKLMNOP" +
+                "QRSTUVWXYZ ,.!?|" +
+                "abcdefghijklmnop" +
+                "qrstuvwxyz£¢$€\"'"+
+                "0123456789=-+*/\\"+
+                "ÄÖÜÅÕŠẞÇŽ       " +
+                "äöüåõšßçž       " +
+                "()<>[]{}:;^%&™  " +
+                "🙂☹️😐😛😉🎵"
+                , caps_only=False)
 
 def glyphxel() -> PixelFont:
     if not PixelFont.GLYPHXEL:
         PixelFont.init_pixelfonts()
     assert PixelFont.GLYPHXEL
     return PixelFont.GLYPHXEL
+
+def sfsans() -> PixelFont:
+    if not PixelFont.SF_SANS:
+        PixelFont.init_pixelfonts()
+    assert PixelFont.SF_SANS
+    return PixelFont.SF_SANS

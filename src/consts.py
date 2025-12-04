@@ -1,4 +1,5 @@
 TITLE: str = "cap' itulate"
+SUBTITLE: str = "epic pirate battle simulator"
 VERSION: str = "1.0.0"
 AUTHOR: str = "DiamondDev"
 

@@ -163,7 +163,8 @@ class PlayerPirate(Pirate):
     def draw(self, cam: camera.Camera):
         super().draw(cam)
 
-        cam.blit(self.arrow.get_frame(), self.position - pygame.Vector2(0, 48 if self.held_item_idx == -1 else 72), scale=consts.DRAW_SCALE, zindex=5)
+        if not self.hidden:
+            cam.blit(self.arrow.get_frame(), self.position - pygame.Vector2(0, 48 if self.held_item_idx == -1 else 72), scale=consts.DRAW_SCALE, zindex=5)
 
         # colliders
         if consts.DRAW_COLLISION_BOXES:

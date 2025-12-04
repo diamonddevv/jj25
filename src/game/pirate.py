@@ -179,6 +179,9 @@ class PlayerPirate(Pirate):
 
         for idx in self.manager.interactables:
             self.manager.interactables[idx].highlight = False
+        closest = self.closest_interactable_idx()
+        if closest != -1 and self.position.distance_squared_to(self.manager.interactables[closest].position) <= self.reach ** 2:
+            self.manager.interactables[closest].highlight = True
 
         if pressed_interact:
             picked_up_item = False
@@ -192,11 +195,12 @@ class PlayerPirate(Pirate):
                             break
 
             if not picked_up_item:
-                closest = self.closest_interactable_idx()
                 if closest != -1:
-                    pass
-
-                if self.held_item_idx != -1:
+                    cl = self.manager.interactables[closest]
+                    if isinstance(cl, interact.Cannon):
+                        self.manager.fire_cannon(self, self.manager.items[self.held_item_idx] if self.held_item_idx != -1 else None, cl)
+                        self.held_item_idx = -1
+                elif self.held_item_idx != -1:
                     self.manager.items[self.held_item_idx].held = False
                     self.manager.items[self.held_item_idx].position = self.position.copy()
                     self.held_item_idx = -1

@@ -18,7 +18,7 @@ class GameManager():
         self.ship_map = ship.Ship()
         self.active_pirates: list[pirate.Pirate] = []
         self.items: dict[int, item.Item] = {i: item.Item(0, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(5)}
-        self.interactables: dict[int, interact.Interactable] = {}
+        self.interactables: dict[int, interact.Interactable] = {i: interact.Cannon(self.ship_map.get_tile_center(self.camera, 2 + i, 1)) for i in range(5)}
 
         self.player = pirate.PlayerPirate(self, self.ship_map.get_tile_center(cam, 3, 3))
         self.active_pirates.append(self.player)

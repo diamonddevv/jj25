@@ -184,7 +184,7 @@ class PlayerPirate(Pirate):
         for idx in self.manager.interactables:
             self.manager.interactables[idx].highlight = False
         closest = self.closest_interactable_idx()
-        if closest != -1 and self.position.distance_squared_to(self.manager.interactables[closest].position) <= self.reach ** 2:
+        if closest != -1 and self.position.distance_squared_to(self.manager.interactables[closest].position) <= self.reach ** 2 and self.manager.interactables[closest].can_highlight():
             self.manager.interactables[closest].highlight = True
 
         if pressed_interact:
@@ -200,10 +200,7 @@ class PlayerPirate(Pirate):
             if not picked_up_item:
                 if closest != -1 and self.manager.interactables[closest].highlight:
                     cl = self.manager.interactables[closest]
-                    if isinstance(cl, interact.Cannon):
-                        if cl.cooldown <= 0:
-                            self.manager.fire_cannon(self, self.manager.items[self.held_item_idx] if self.held_item_idx != -1 else None, cl)
-                            self.held_item_idx = -1
+                    cl.interact(self)
                 elif self.held_item_idx != -1:
                     self.manager.items[self.held_item_idx].held = False
                     self.manager.items[self.held_item_idx].position = self.position.copy()
@@ -240,6 +237,7 @@ class PirateBrain(brain.Brain[NPCPirate]):
 
 
         self.add_task(WalkToPositionTask, 5)
+        self.add_task(FindItemTask, 1)
         self.add_task(PickUpItemTask, 1)
         self.add_task(FireCannonTask, 1)
 
@@ -260,6 +258,35 @@ class WalkToPositionTask(brain.Task[NPCPirate]):
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
         super().process(dt, cam, t)
         t.target_position = self.target.copy()
+
+class FindItemTask(brain.Task[NPCPirate]):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.target: int = -1
+        
+    
+    def start(self, t: NPCPirate):
+        l = list(filter(lambda idx: isinstance(t.manager.interactables[idx], interact.ItemBarrel), t.manager.interactables.keys()))
+        if len(l) <= 0:
+            return
+        self.target = l[random.randint(0, len(l) - 1)]
+
+    def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
+        super().process(dt, cam, t)
+        t.target_position = t.manager.interactables[self.target].position.copy()
+
+        if t.position.distance_squared_to(t.manager.interactables[self.target].position) <= t.reach ** 2 and t.held_item_idx == -1:
+            cl = t.manager.interactables[self.target]
+            if isinstance(cl, interact.ItemBarrel):
+                if cl.cooldown <= 0:
+                    cl.add_item(t)
+    
+    def can_finish(self, t: NPCPirate) -> bool:
+        return t.held_item_idx != -1
+
+    def prereq(self, t: NPCPirate) -> bool:
+        return t.held_item_idx == -1 and len(t.manager.interactables) > 0
 
 class PickUpItemTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:
@@ -312,7 +339,9 @@ class FireCannonTask(brain.Task[NPCPirate]):
                     t.held_item_idx = -1
     
     def can_finish(self, t: NPCPirate) -> bool:
-        return t.held_item_idx == -1
+        c = t.manager.interactables[self.target]
+        assert isinstance(c, interact.Cannon)
+        return t.held_item_idx == -1 and c.cooldown <= 0
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1 and len(t.manager.interactables) > 0

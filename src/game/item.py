@@ -12,15 +12,16 @@ from src.game import interact
 class Item(fireable.Fireable):
     type _ItemEntry = tuple[
         tuple[int, int], # tilesheet pos
-        str # name
+        str, # name
+        float, # dmg mult
     ]
 
-    ITEMS: dict[int, _ItemEntry] = {
-        0: ((0, 0), "Cannonball"),
-        1: ((1, 0), "Bottle o' Rum"),
-        2: ((2, 0), "Parrot"),
-        3: ((3, 0), "Wood"),
-    }
+    ITEMS: list[_ItemEntry] = [
+        ((0, 0), "Cannonball", 3.0),
+        ((1, 0), "Bottle o' Rum", 1.2),
+        ((2, 0), "Parrot", 0.4),
+        ((3, 0), "Wood", 0.7),
+    ]
 
     
 
@@ -48,6 +49,9 @@ class Item(fireable.Fireable):
     
     def name(self) -> str:
         return Item.ITEMS[self.id][1]
+    
+    def damage_mult(self) -> float:
+        return Item.ITEMS[self.id][2]
     
     def set_position(self, position: pygame.Vector2):
         self.position = position

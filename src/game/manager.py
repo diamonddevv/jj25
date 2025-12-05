@@ -19,8 +19,13 @@ class GameManager():
 
         self.ship_map = ship.Ship()
         self.active_pirates: list[pirate.Pirate] = [pirate.NPCPirate(self, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(7)]
-        self.items: dict[int, item.Item] = {i: item.Item(0, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(5)}
-        self.interactables: dict[int, interact.Interactable] = {i: interact.Cannon(self.ship_map.get_tile_center(self.camera, 5.5 + i * 5, 1)) for i in range(5)}
+        
+        self._next_item_idx: int = 0
+        self.items: dict[int, item.Item] = {} 
+        
+        self._next_interactable_idx: int = 0
+        self.interactables: dict[int, interact.Interactable] = {}
+        self.add_interactables(cam)
 
         self.player = pirate.PlayerPirate(self, self.ship_map.get_tile_center(cam, 3, 3))
         self.active_pirates.append(self.player)
@@ -32,6 +37,27 @@ class GameManager():
 
         self.boat_health: float = 100.0
         self.enemy_health: float = 100.0
+
+    def add_item(self, item: item.Item) -> int:
+        self.items[self._next_item_idx] = item
+        self._next_item_idx += 1
+        return self._next_item_idx - 1
+
+    def add_interactables(self, cam: camera.Camera):
+        # cannons
+        for i in range(5):
+           self.interactables[self._next_interactable_idx] = interact.Cannon(self.ship_map.get_tile_center(self.camera, 5.5 + i * 5, 1)) 
+           self._next_interactable_idx += 1
+        
+        # barrels left
+        for i in range(3):
+            self.interactables[self._next_interactable_idx] = interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 1, (i + 1) * 1.5)) 
+            self._next_interactable_idx += 1
+
+        # barrels right
+        for i in range(3):
+            self.interactables[self._next_interactable_idx] = interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 30, (i + 1) * 1.5)) 
+            self._next_interactable_idx += 1
 
 
     def draw(self, cam: camera.Camera):
@@ -70,6 +96,7 @@ class GameManager():
             )
 
     def update(self, dt: float, cam: camera.Camera):
+        self.random_enemy_fire()
         
         for pirate in self.active_pirates:
             pirate.update(dt, cam)
@@ -77,11 +104,14 @@ class GameManager():
         r = []
         for idx in self.items:
             self.items[idx].update(dt, cam)
-            if self.items[idx].position.y < -1000:
+            if self.items[idx].position.y < -1000 or self.items[idx].position.y > 1000 + consts.CANVAS_DIMS[1]:
                 self.items[idx].removal_mark = True
 
                 if self.items[idx].fired:
-                    self.enemy_health -= random.uniform(1, 500)
+                    if self.items[idx].fired_up:
+                        self.enemy_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
+                    else:
+                        self.boat_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
 
             if self.items[idx].removal_mark:
                 r.append(idx)
@@ -115,7 +145,12 @@ class GameManager():
     def fire_cannon(self, firer: pirate.Pirate, item: item.Item | None, cannon: interact.Cannon):
         cannon.fire(firer, item if item is not None else firer)
 
-
+    def random_enemy_fire(self):
+        x = self.ship_map.get_tile_center(self.camera, random.uniform(1, 30), 0).x
+        i = item.Item(random.randint(0 , len(item.Item.ITEMS) - 1), pygame.Vector2(x, 1000))
+        i.fired = True
+        i.fired_up = False
+        self.add_item(i)
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

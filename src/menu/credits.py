@@ -20,7 +20,6 @@ class CreditsScene(menu.MenuScene):
               PROGRAMMING:        Fynn (DiamondDev)
                    DESIGN:        Fynn (DiamondDev), Euan Stables
                       ART:        Fynn (DiamondDev)
-                    MUSIC:        Euan Stables
 
      Special Thanks to:          Made with:
             - Team impROVise        - pygame-ce 2.5.6

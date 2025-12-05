@@ -9,6 +9,7 @@ from src.game import pirate
 from src.game import ship
 from src.game import interact
 from src.game import item
+from src.menu import win
 
 type _Collider = pygame.Rect | interact.Interactable
 
@@ -80,7 +81,7 @@ class GameManager():
                 self.items[idx].removal_mark = True
 
                 if self.items[idx].fired:
-                    self.enemy_health -= random.uniform(1, 5)
+                    self.enemy_health -= random.uniform(1, 500)
 
             if self.items[idx].removal_mark:
                 r.append(idx)
@@ -91,6 +92,13 @@ class GameManager():
             self.interactables[idx].update(dt, cam)
 
         self.ship_map.update(dt, cam)
+
+        if self.enemy_health <= 0.0:
+            pygame.event.post(
+                pygame.Event(event.CHANGE_SCENE, {
+                    'scene': win.WinScene
+                })
+            )
 
         
 

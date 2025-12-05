@@ -53,10 +53,6 @@ class Item(fireable.Fireable):
 
     def fire(self, firer: pirate.Pirate, cannon: interact.Cannon):
         super().fire(firer, cannon)
-        def _r():
-            del firer.manager.items[firer.held_item_idx]
-        firer.held_item_idx = -1
-        event.schedule(_r, 5)
     
     
 

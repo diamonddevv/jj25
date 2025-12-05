@@ -125,7 +125,11 @@ class Pirate(fireable.Fireable):
                 firer.fired = False
                 firer.sprite_rotation = 0.0
         event.schedule(_r, 5)
-    
+
+    def pickup_item(self, item_idx: int):
+        self.held_item_idx = item_idx
+        self.manager.items[self.held_item_idx].held = True
+
 class PlayerPirate(Pirate):
 
     KEY_UP: int = pygame.K_w
@@ -191,21 +195,20 @@ class PlayerPirate(Pirate):
                     if self.position.distance_squared_to(self.manager.items[idx].position) <= self.reach ** 2:
                         if self.manager.items[idx].can_be_picked_up():
                             picked_up_item = True
-                            self.held_item_idx = idx
-                            self.manager.items[self.held_item_idx].held = True
+                            self.pickup_item(idx)
                             break
 
             if not picked_up_item:
-                if closest != -1:
+                if closest != -1 and self.manager.interactables[closest].highlight:
                     cl = self.manager.interactables[closest]
                     if isinstance(cl, interact.Cannon):
-                        self.manager.fire_cannon(self, self.manager.items[self.held_item_idx] if self.held_item_idx != -1 else None, cl)
-                        self.held_item_idx = -1
+                        if cl.cooldown <= 0:
+                            self.manager.fire_cannon(self, self.manager.items[self.held_item_idx] if self.held_item_idx != -1 else None, cl)
+                            self.held_item_idx = -1
                 elif self.held_item_idx != -1:
                     self.manager.items[self.held_item_idx].held = False
                     self.manager.items[self.held_item_idx].position = self.position.copy()
                     self.held_item_idx = -1
-
 
 class NPCPirate(Pirate):
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
@@ -217,14 +220,14 @@ class NPCPirate(Pirate):
         self.at_target = False
 
     def update(self, dt: float, cam: camera.Camera):
-        self.at_target = self.position.distance_squared_to(self.target_position) >= self.target_pos_tolerance ** 2
         super().update(dt, cam)
         self.brain.update(dt, cam, self)
+        self.at_target = self.position.distance_squared_to(self.target_position) <= self.target_pos_tolerance ** 2
 
     def get_movement(self, dt: float) -> pygame.Vector2:
         super().get_movement(dt)
 
-        if self.at_target:
+        if not self.at_target:
             dist = (self.target_position - self.position)
             if dist.length() != 0:
                 return dist.normalize()
@@ -239,6 +242,7 @@ class PirateBrain(brain.Brain[NPCPirate]):
 
         self.add_task(WalkToPositionTask, 5)
         self.add_task(PickUpItemTask, 1)
+        self.add_task(FireCannonTask, 1)
 
 class WalkToPositionTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:
@@ -256,7 +260,7 @@ class WalkToPositionTask(brain.Task[NPCPirate]):
 
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
         super().process(dt, cam, t)
-        t.target_position = self.target
+        t.target_position = self.target.copy()
 
 class PickUpItemTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:
@@ -265,53 +269,51 @@ class PickUpItemTask(brain.Task[NPCPirate]):
         
 
     def start(self, t: NPCPirate):
-        selected = False
-        while not selected and self.prereq(t):
-            idx = random.choice(list(t.manager.items.keys()))
-            if not t.manager.items[idx].held:
-                selected = True
-                self.target = idx
+        l = list(filter(lambda idx: t.manager.items[idx].can_be_picked_up(), t.manager.items.keys()))
+        if len(l) <= 0:
+            return
+        self.target = l[random.randint(0, len(l) - 1)]
 
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
         super().process(dt, cam, t)
         if self.target != -1:
-            t.target_position = t.manager.items[self.target].position
+            t.target_position = t.manager.items[self.target].position.copy()
 
-            if t.at_target and t.manager.items[self.target].can_be_picked_up():
-                pygame.event.post(pygame.event.Event(event.PICKUP_ITEM, {
-                    'pirate': t
-                }))
+            if t.position.distance_squared_to(t.manager.items[self.target].position) <= t.reach ** 2 and t.manager.items[self.target].can_be_picked_up(): 
+                t.pickup_item(self.target)
     
     def prereq(self, t: NPCPirate) -> bool:
-        return len(t.manager.items) > 0
+        return len(t.manager.items) > 0 and t.held_item_idx == -1
 
     def can_finish(self, t: NPCPirate) -> bool:
-        return t.held_item_idx != -1 or self.target == -1 or not t.manager.items[self.target].can_be_picked_up()
+        return self.target == -1 or not t.manager.items[self.target].can_be_picked_up()
 
 class FireCannonTask(brain.Task[NPCPirate]):
-    def __init__(self, pirate: NPCPirate) -> None:
+    def __init__(self) -> None:
         super().__init__()
+
+        self.target: int = -1
         
-        selected = False
-        while not selected:
-            idx = random.choice(list(pirate.manager.interactables.keys()))
-            if isinstance(pirate.manager.interactables[idx], interact.Cannon):
-                selected = True
-                self.target = idx
+    
+    def start(self, t: NPCPirate):
+        l = list(filter(lambda idx: isinstance(t.manager.interactables[idx], interact.Cannon), t.manager.interactables.keys()))
+        if len(l) <= 0:
+            return
+        self.target = l[random.randint(0, len(l) - 1)]
 
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
         super().process(dt, cam, t)
-        t.target_position = t.manager.interactables[self.target].position
+        t.target_position = t.manager.interactables[self.target].position.copy()
 
-        if t.at_target and t.held_item_idx != -1:
-            pygame.event.post(pygame.event.Event(event.FIRE_CANNON, {
-                    'pirate': t,
-                    'item': t.held_item_idx,
-                    'cannon': self.target,
-                }))
+        if t.position.distance_squared_to(t.manager.interactables[self.target].position) <= t.reach ** 2 and t.held_item_idx != -1:
+            cl = t.manager.interactables[self.target]
+            if isinstance(cl, interact.Cannon):
+                if cl.cooldown <= 0:
+                    t.manager.fire_cannon(t, t.manager.items[t.held_item_idx], cl)
+                    t.held_item_idx = -1
     
     def can_finish(self, t: NPCPirate) -> bool:
         return t.held_item_idx == -1
 
     def prereq(self, t: NPCPirate) -> bool:
-        return t.held_item_idx != -1
+        return t.held_item_idx != -1 and len(t.manager.interactables) > 0

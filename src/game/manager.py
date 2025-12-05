@@ -16,7 +16,7 @@ class GameManager():
         self.camera = cam
 
         self.ship_map = ship.Ship()
-        self.active_pirates: list[pirate.Pirate] = []
+        self.active_pirates: list[pirate.Pirate] = [pirate.NPCPirate(self, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(7)]
         self.items: dict[int, item.Item] = {i: item.Item(0, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(5)}
         self.interactables: dict[int, interact.Interactable] = {i: interact.Cannon(self.ship_map.get_tile_center(self.camera, 2 + i, 1)) for i in range(5)}
 
@@ -58,6 +58,8 @@ class GameManager():
 
         for idx in self.items:
             self.items[idx].update(dt, cam)
+            if self.items[idx].position.y > 1000:
+                del self.items[idx]
 
         for idx in self.interactables:
             self.interactables[idx].update(dt, cam)
@@ -73,11 +75,6 @@ class GameManager():
         if isinstance(collider, interact.Interactable):
             return collider.collider
         return pygame.Rect(0, 0, 0, 0)
-
-
-    def pickup_item(self, pickerupper: pirate.Pirate, item_id: int):
-        item = self.items[item_id]
-        pass
 
     def fire_cannon(self, firer: pirate.Pirate, item: item.Item | None, cannon: interact.Cannon):
         cannon.fire(firer, item if item is not None else firer)

@@ -26,13 +26,12 @@ class Brain[T]():
 
 
     def pick_task(self, t: T):
-        task_found = False
-        while not task_found:
-            proposed_task = random.choice(self.task_pool)(t)
+        while True:
+            proposed_task = random.choice(self.task_pool)()
             if proposed_task.prereq(t):
-                task_found = True
                 self.task = proposed_task
                 self.task.start(t)
+                break
 
 
 class Task[T]():

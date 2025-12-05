@@ -21,6 +21,14 @@ def schedule(op: typing.Callable, delay: float):
     thread = threading.Thread(name="ScheduledFunction", target=_threadactivity, args=[op, delay], daemon=True)
     thread.start()
 
+def schedule_provider[T](op: typing.Callable[[T], typing.Any], delay: float, t: T):
+    def _threadactivity(f, d, t):
+        time.sleep(d)
+        f(t)
+
+    thread = threading.Thread(name="ScheduledFunctionProvider", target=_threadactivity, args=[op, delay, t], daemon=True)
+    thread.start()
+
 def sequence(steps: list[tuple[typing.Callable, float]]):
     def _threadactivity(s):
         for step in s:

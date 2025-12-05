@@ -29,7 +29,6 @@ class Pirate(fireable.Fireable):
         self.speed = 300.0
         self.sprite_rotation = 0.0
         self.reach = 80
-        self.health = 100.0
         self.crouched = False
         self.update_anim = True
         self.held_item_idx: int = -1

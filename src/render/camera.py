@@ -1,6 +1,7 @@
 from __future__ import annotations
 import pygame
 import typing
+import random
 
 from src import consts
 

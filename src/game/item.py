@@ -31,6 +31,7 @@ class Item(fireable.Fireable):
         self.texture = spritesheet.Spritesheet(util.load_texture('res/items.png'))
         self.flip_texture = False
         self.held = False
+        self.removal_mark = False
         self.rotation = 0.0
 
     def draw(self, cam: camera.Camera):
@@ -43,7 +44,7 @@ class Item(fireable.Fireable):
             self.rotation += fireable.Fireable.FIRE_ROT_SPEED * dt
 
     def can_be_picked_up(self) -> bool:
-        return not self.held and not self.fired and not self.hidden
+        return not self.held and not self.fired and not self.hidden and not self.removal_mark
     
     def name(self) -> str:
         return Item.ITEMS[self.id][1]

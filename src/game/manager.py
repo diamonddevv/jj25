@@ -1,4 +1,5 @@
 import pygame
+import typing
 import random
 
 from src import consts
@@ -25,7 +26,7 @@ class GameManager():
         
         self._next_interactable_idx: int = 0
         self.interactables: dict[int, interact.Interactable] = {}
-        self.add_interactables(cam)
+        self.add_interactables()
 
         self.player = pirate.PlayerPirate(self, self.ship_map.get_tile_center(cam, 3, 3))
         self.active_pirates.append(self.player)
@@ -38,26 +39,33 @@ class GameManager():
         self.boat_health: float = 100.0
         self.enemy_health: float = 100.0
 
+        self.next_enemy_fire: float = 0.0
+
     def add_item(self, item: item.Item) -> int:
         self.items[self._next_item_idx] = item
         self._next_item_idx += 1
         return self._next_item_idx - 1
+    
+    def add_interactable(self, interactable: interact.Interactable):
+        self.interactables[self._next_interactable_idx] = interactable
+        self._next_interactable_idx += 1
 
-    def add_interactables(self, cam: camera.Camera):
+    def add_interactable_idx(self, f: typing.Callable[[int], interact.Interactable]):
+        self.interactables[self._next_interactable_idx] = f(self._next_interactable_idx)
+        self._next_interactable_idx += 1
+
+    def add_interactables(self):
         # cannons
         for i in range(5):
-           self.interactables[self._next_interactable_idx] = interact.Cannon(self.ship_map.get_tile_center(self.camera, 5.5 + i * 5, 1)) 
-           self._next_interactable_idx += 1
+           self.add_interactable(interact.Cannon(self.ship_map.get_tile_center(self.camera, 5.5 + i * 5, 1)))
         
         # barrels left
         for i in range(3):
-            self.interactables[self._next_interactable_idx] = interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 1, (i + 1) * 1.5)) 
-            self._next_interactable_idx += 1
+            self.add_interactable(interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 1, (i + 1) * 1.5)))
 
         # barrels right
         for i in range(3):
-            self.interactables[self._next_interactable_idx] = interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 30, (i + 1) * 1.5)) 
-            self._next_interactable_idx += 1
+            self.add_interactable(interact.ItemBarrel(self.ship_map.get_tile_center(self.camera, 30, (i + 1) * 1.5)))
 
 
     def draw(self, cam: camera.Camera):
@@ -96,7 +104,7 @@ class GameManager():
             )
 
     def update(self, dt: float, cam: camera.Camera):
-        self.random_enemy_fire()
+        self.try_random_enemy_fire(dt)
         
         for pirate in self.active_pirates:
             pirate.update(dt, cam)
@@ -104,22 +112,30 @@ class GameManager():
         r = []
         for idx in self.items:
             self.items[idx].update(dt, cam)
-            if self.items[idx].position.y < -1000 or self.items[idx].position.y > 1000 + consts.CANVAS_DIMS[1]:
-                self.items[idx].removal_mark = True
+            if self.items[idx].fired:
+                if (self.items[idx].fired_up and self.items[idx].position.y < -600) or (not self.items[idx].fired_up and self.items[idx].position.y > 250 + (self.items[idx].random_variance - 0.5) * 180):
+                    self.items[idx].removal_mark = True
 
-                if self.items[idx].fired:
+                    
                     if self.items[idx].fired_up:
                         self.enemy_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
                     else:
                         self.boat_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
+                        if random.random() > interact.DamageSpot.CHANCE:
+                            self.add_interactable_idx(lambda i: interact.DamageSpot(i, self.items[idx].position.copy()))
 
             if self.items[idx].removal_mark:
                 r.append(idx)
         for i in r:
             del self.items[i]
 
+        r = []
         for idx in self.interactables:
             self.interactables[idx].update(dt, cam)
+            if self.interactables[idx].removal_mark:
+                r.append(idx)
+        for i in r:
+            del self.items[i]
 
         self.ship_map.update(dt, cam)
 
@@ -145,12 +161,16 @@ class GameManager():
     def fire_cannon(self, firer: pirate.Pirate, item: item.Item | None, cannon: interact.Cannon):
         cannon.fire(firer, item if item is not None else firer)
 
-    def random_enemy_fire(self):
-        x = self.ship_map.get_tile_center(self.camera, random.uniform(1, 30), 0).x
-        i = item.Item(random.randint(0 , len(item.Item.ITEMS) - 1), pygame.Vector2(x, 1000))
-        i.fired = True
-        i.fired_up = False
-        self.add_item(i)
+    def try_random_enemy_fire(self, dt: float):
+        self.next_enemy_fire -= dt
+
+        if self.next_enemy_fire <= 0:    
+            x = self.ship_map.get_tile_center(self.camera, random.uniform(1, 30), 0).x
+            i = item.Item(random.randint(0 , len(item.Item.ITEMS) - 1), pygame.Vector2(x, -800))
+            i.fired = True
+            i.fired_up = False
+            self.add_item(i)
+            self.next_enemy_fire = random.uniform(2, 10)
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

@@ -17,6 +17,7 @@ class Interactable():
         self.position = pos
         self.collider = pygame.Rect(0, 0, 0, 0)
         self.highlight = False
+        self.removal_mark = False
 
     def draw(self, cam: camera.Camera):
         pass
@@ -184,3 +185,35 @@ class ItemBarrel(Interactable):
 
     def can_highlight(self) -> bool:
         return self.cooldown <= 0
+    
+class DamageSpot(Interactable):
+        ANIM_IDLE: str = 'idle'
+        ANIM_SELECTABLE: str = 'selectable'
+
+        CHANCE: float = 0.2
+
+        def __init__(self, idx: int, pos: pygame.Vector2 = pygame.Vector2()) -> None:
+            super().__init__(pos)
+            self.spritesheet = spritesheet.Spritesheet(util.load_texture('res/interactable.png'))
+            self.anim_tex = animate.AnimatedTexture(self.spritesheet,
+                                                    {
+                                                        ItemBarrel.ANIM_IDLE: (4, [(0, 3)]),
+                                                        ItemBarrel.ANIM_SELECTABLE: (4, [(1, 3)])
+                                                    })
+            
+            self.idx = idx
+
+        def draw(self, cam: camera.Camera):
+            cam.blit(
+                self.anim_tex.get_frame(), self.position, scale=consts.DRAW_SCALE,zindex=-2
+            )
+
+        def update(self, dt: float, cam: camera.Camera):
+            self.anim_tex.set_anim(DamageSpot.ANIM_SELECTABLE if self.highlight else DamageSpot.ANIM_IDLE)
+
+            self.anim_tex.tick(dt)
+
+        def interact(self, user: pirate.Pirate):
+            if user.manager.items[user.held_item_idx].id == 3:
+                user.manager.items[user.held_item_idx].removal_mark = True
+                user.manager.interactables[self.idx].removal_mark = True

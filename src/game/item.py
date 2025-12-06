@@ -1,4 +1,5 @@
 import pygame
+import random
 
 from src import util
 from src import event
@@ -34,6 +35,7 @@ class Item(fireable.Fireable):
         self.held = False
         self.removal_mark = False
         self.rotation = 0.0
+        self.random_variance: float = random.random()
 
     def draw(self, cam: camera.Camera):
         if not self.hidden:

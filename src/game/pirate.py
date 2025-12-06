@@ -341,7 +341,7 @@ class FireCannonTask(brain.Task[NPCPirate]):
     def can_finish(self, t: NPCPirate) -> bool:
         c = t.manager.interactables[self.target]
         assert isinstance(c, interact.Cannon)
-        return t.held_item_idx == -1 and c.cooldown <= 0
+        return t.held_item_idx == -1 or c.cooldown > 0
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1 and len(t.manager.interactables) > 0

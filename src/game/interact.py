@@ -190,9 +190,9 @@ class DamageSpot(Interactable):
         ANIM_IDLE: str = 'idle'
         ANIM_SELECTABLE: str = 'selectable'
 
-        CHANCE: float = 0.2
+        CHANCE: float = 1
 
-        def __init__(self, idx: int, pos: pygame.Vector2 = pygame.Vector2()) -> None:
+        def __init__(self, idx: int, damage: float, pos: pygame.Vector2 = pygame.Vector2()) -> None:
             super().__init__(pos)
             self.spritesheet = spritesheet.Spritesheet(util.load_texture('res/interactable.png'))
             self.anim_tex = animate.AnimatedTexture(self.spritesheet,
@@ -202,10 +202,11 @@ class DamageSpot(Interactable):
                                                     })
             
             self.idx = idx
+            self.damage = damage
 
         def draw(self, cam: camera.Camera):
             cam.blit(
-                self.anim_tex.get_frame(), self.position, scale=consts.DRAW_SCALE,zindex=-2
+                self.anim_tex.get_frame(), self.position, scale=consts.DRAW_SCALE,zindex=-4
             )
 
         def update(self, dt: float, cam: camera.Camera):
@@ -214,6 +215,8 @@ class DamageSpot(Interactable):
             self.anim_tex.tick(dt)
 
         def interact(self, user: pirate.Pirate):
-            if user.manager.items[user.held_item_idx].id == 3:
-                user.manager.items[user.held_item_idx].removal_mark = True
-                user.manager.interactables[self.idx].removal_mark = True
+            if user.held_item_idx != -1:
+                if user.manager.items[user.held_item_idx].fixes_damage():
+                    user.manager.items[user.held_item_idx].removal_mark = True
+                    user.manager.interactables[self.idx].removal_mark = True
+                    user.manager.boat_health += self.damage

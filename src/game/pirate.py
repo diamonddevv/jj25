@@ -33,6 +33,7 @@ class Pirate(fireable.Fireable):
         self.update_anim = True
         self.held_item_idx: int = -1
         self.collision_box = pygame.Rect(0, 0, 0, 0)
+        self.drunk_time: float = 0.0
 
         self.manager = manager
 
@@ -76,6 +77,13 @@ class Pirate(fireable.Fireable):
             self.sprite_rotation += fireable.Fireable.FIRE_ROT_SPEED * dt
         else:
             movement = self.get_movement(dt)
+
+            if self.drunk_time > 0:
+                movement = movement.elementwise() * pygame.Vector2(
+                    random.uniform(-1.4, -1.8),
+                    random.uniform(-1.4, -1.8),
+                )
+                self.drunk_time -= dt
 
             anim = Pirate.ANIM_IDLE
             if movement != pygame.Vector2():
@@ -137,6 +145,7 @@ class PlayerPirate(Pirate):
     KEY_RIGHT: int = pygame.K_d
     KEY_CROUCH: int = pygame.K_LSHIFT
     KEY_INTERACT: int = pygame.K_SPACE
+    KEY_DRINK: int = pygame.K_e
 
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
         super().__init__(manager, pos)
@@ -180,6 +189,7 @@ class PlayerPirate(Pirate):
         self.arrow.tick(dt)
 
         pressed_interact = pygame.key.get_just_pressed()[PlayerPirate.KEY_INTERACT]
+        drink = pygame.key.get_just_pressed()[PlayerPirate.KEY_DRINK]
 
         for idx in self.manager.interactables:
             self.manager.interactables[idx].highlight = False
@@ -205,6 +215,13 @@ class PlayerPirate(Pirate):
                     self.manager.items[self.held_item_idx].held = False
                     self.manager.items[self.held_item_idx].position = self.position.copy()
                     self.held_item_idx = -1
+
+        
+        if drink:
+            if self.held_item_idx != -1:
+                if self.manager.items[self.held_item_idx].gets_you_drunk():
+                    self.drunk_time = random.uniform(2.5, 5)
+                    self.manager.items[self.held_item_idx].removal_mark = True
 
 class NPCPirate(Pirate):
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
@@ -280,7 +297,7 @@ class FindItemTask(brain.Task[NPCPirate]):
             cl = t.manager.interactables[self.target]
             if isinstance(cl, interact.ItemBarrel):
                 if cl.cooldown <= 0:
-                    cl.add_item(t)
+                    cl.interact(t)
     
     def can_finish(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1
@@ -344,4 +361,4 @@ class FireCannonTask(brain.Task[NPCPirate]):
         return t.held_item_idx == -1 or c.cooldown > 0
 
     def prereq(self, t: NPCPirate) -> bool:
-        return t.held_item_idx != -1 and len(t.manager.interactables) > 0
+        return t.held_item_idx != -1 and len(t.manager.interactables) > 0 and t.manager.items[t.held_item_idx].causes_damage()

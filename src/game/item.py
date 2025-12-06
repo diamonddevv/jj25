@@ -15,13 +15,16 @@ class Item(fireable.Fireable):
         tuple[int, int], # tilesheet pos
         str, # name
         float, # dmg mult
+        bool, # spawns damage marks
+        bool, # fixes damage marks
+        bool # gets you drunk
     ]
 
     ITEMS: list[_ItemEntry] = [
-        ((0, 0), "Cannonball", 3.0),
-        ((1, 0), "Bottle o' Rum", 1.2),
-        ((2, 0), "Parrot", 0.4),
-        ((3, 0), "Wood", 0.7),
+        ((0, 0), "Cannonball", 3.0, True, False, False),
+        ((1, 0), "Bottle o' Rum", 1.2, True, False, True),
+        ((2, 0), "Parrot", 0.4, True, False, False),
+        ((3, 0), "Wood", 0, False, True, False),
     ]
 
     
@@ -54,6 +57,15 @@ class Item(fireable.Fireable):
     
     def damage_mult(self) -> float:
         return Item.ITEMS[self.id][2]
+    
+    def causes_damage(self) -> bool:
+        return Item.ITEMS[self.id][3]
+    
+    def fixes_damage(self) -> bool:
+        return Item.ITEMS[self.id][4]
+    
+    def gets_you_drunk(self) -> bool:
+        return Item.ITEMS[self.id][5]
     
     def set_position(self, position: pygame.Vector2):
         self.position = position

@@ -102,6 +102,13 @@ class GameManager():
                     pygame.Vector2(20, 20)
                 ), zindex=consts.HUD_LAYER
             )
+            if self.items[self.player.held_item_idx].gets_you_drunk():
+                cam.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Press E to drink", 2),
+                    pygame.Vector2(20, 60)
+                ), zindex=consts.HUD_LAYER
+            )
 
     def update(self, dt: float, cam: camera.Camera):
         self.try_random_enemy_fire(dt)
@@ -109,24 +116,31 @@ class GameManager():
         for pirate in self.active_pirates:
             pirate.update(dt, cam)
 
-        r = []
+        r: list[int] = []
         for idx in self.items:
             self.items[idx].update(dt, cam)
             if self.items[idx].fired:
                 if (self.items[idx].fired_up and self.items[idx].position.y < -600) or (not self.items[idx].fired_up and self.items[idx].position.y > 250 + (self.items[idx].random_variance - 0.5) * 180):
                     self.items[idx].removal_mark = True
 
+                    damage = random.uniform(1, 5) * self.items[idx].damage_mult()
                     
                     if self.items[idx].fired_up:
-                        self.enemy_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
+                        self.enemy_health -= damage
                     else:
-                        self.boat_health -= random.uniform(1, 5) * self.items[idx].damage_mult()
-                        if random.random() > interact.DamageSpot.CHANCE:
-                            self.add_interactable_idx(lambda i: interact.DamageSpot(i, self.items[idx].position.copy()))
+                        self.boat_health -= damage
+
+                        if self.items[idx].causes_damage():
+                            self.add_interactable_idx(lambda i: interact.DamageSpot(i, damage, self.items[idx].position.copy()))
 
             if self.items[idx].removal_mark:
                 r.append(idx)
+
         for i in r:
+            if self.items[i].held:
+                for p in self.active_pirates:
+                    if p.held_item_idx == i:
+                        p.held_item_idx = -1
             del self.items[i]
 
         r = []
@@ -135,7 +149,7 @@ class GameManager():
             if self.interactables[idx].removal_mark:
                 r.append(idx)
         for i in r:
-            del self.items[i]
+            del self.interactables[i]
 
         self.ship_map.update(dt, cam)
 

@@ -11,6 +11,7 @@ from src.game import ship
 from src.game import interact
 from src.game import item
 from src.menu import win
+from src.menu import lose
 
 type _Collider = pygame.Rect | interact.Interactable
 
@@ -83,14 +84,14 @@ class GameManager():
         # hud
         cam.with_zindex_blit(
                 (
-                    text.glyphxel().render_adv(f"{self.team_name} (Good Guys): {self.boat_health:.1f}% ship integrity", 2),
+                    text.glyphxel().render_adv(f"{self.team_name} (Good Guys): {self.boat_health:.1f}% ship integrity", 2, color=0x005f41),
                     pygame.Vector2(consts.CANVAS_DIMS[0]/2, 25)
                 ), centered=True, zindex=consts.HUD_LAYER
             )
         
         cam.with_zindex_blit(
                 (
-                    text.glyphxel().render_adv(f"{self.enemy_team_name} (Bad Guys): {self.enemy_health:.1f}% ship integrity", 2),
+                    text.glyphxel().render_adv(f"{self.enemy_team_name} (Bad Guys): {self.enemy_health:.1f}% ship integrity", 2, color=0x720d0d),
                     pygame.Vector2(consts.CANVAS_DIMS[0]/2, 65)
                 ), centered=True, zindex=consts.HUD_LAYER
             )
@@ -121,7 +122,12 @@ class GameManager():
             self.items[idx].update(dt, cam)
             if self.items[idx].fired:
                 if (self.items[idx].fired_up and self.items[idx].position.y < -600) or (not self.items[idx].fired_up and self.items[idx].position.y > 250 + (self.items[idx].random_variance - 0.5) * 180):
-                    self.items[idx].removal_mark = True
+                    
+                    if self.items[idx].causes_damage():
+                        self.items[idx].removal_mark = True
+                    else:
+                        self.items[idx].fired = False
+                        self.items[idx].rotation = 0.0
 
                     damage = random.uniform(1, 5) * self.items[idx].damage_mult()
                     
@@ -157,6 +163,13 @@ class GameManager():
             pygame.event.post(
                 pygame.Event(event.CHANGE_SCENE, {
                     'scene': win.WinScene
+                })
+            )
+
+        if self.boat_health <= 0.0:
+            pygame.event.post(
+                pygame.Event(event.CHANGE_SCENE, {
+                    'scene': lose.LoseScene
                 })
             )
 

@@ -13,7 +13,7 @@ from src.menu import menu
 from src.menu import mainmenu
 
 
-class WinScene(menu.MenuScene):
+class LoseScene(menu.MenuScene):
 
     def __init__(self, camera: camera.Camera) -> None:
         super().__init__(camera)
@@ -21,11 +21,11 @@ class WinScene(menu.MenuScene):
 
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 125),
-                      lambda: "winner", 3, 0x000000, centered=True, sfsans=True)
+                      lambda: "loser", 3, 0x000000, centered=True, sfsans=True)
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
-                      lambda: "you didded it", 2, 0x000000, centered=True)
+                      lambda: "your ship sinked lol", 2, 0x000000, centered=True)
         )
         
         self.container.add(

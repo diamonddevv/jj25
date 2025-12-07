@@ -170,7 +170,7 @@ class ItemBarrel(Interactable):
         self.collider = pygame.Rect(self.position - pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE / 2 + pygame.Vector2(self.collider_base.topleft) * consts.DRAW_SCALE, pygame.Vector2(self.collider_base.size) * consts.DRAW_SCALE)
 
     def interact(self, user: pirate.Pirate):
-        if self.cooldown <= 0.0:
+        if self.cooldown <= 0.0 and user.held_item_idx == -1:
             self.add_item(user)
             self.anim_tex.set_anim(ItemBarrel.ANIM_IDLE)
             self.cooldown = ItemBarrel.COOLDOWN
@@ -189,8 +189,6 @@ class ItemBarrel(Interactable):
 class DamageSpot(Interactable):
         ANIM_IDLE: str = 'idle'
         ANIM_SELECTABLE: str = 'selectable'
-
-        CHANCE: float = 1
 
         def __init__(self, idx: int, damage: float, pos: pygame.Vector2 = pygame.Vector2()) -> None:
             super().__init__(pos)

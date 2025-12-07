@@ -2,6 +2,7 @@ from __future__ import annotations
 import pygame
 import random
 import typing
+import math
 
 from src import util
 from src import consts
@@ -22,6 +23,7 @@ class Pirate(fireable.Fireable):
     ANIM_RUN: str = 'run'
     ANIM_CROUCH: str = 'crouch'
     ANIM_HOLD: str = 'hold'
+    ANIM_DRINK: str = 'drink'
 
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
         super().__init__()
@@ -34,6 +36,7 @@ class Pirate(fireable.Fireable):
         self.held_item_idx: int = -1
         self.collision_box = pygame.Rect(0, 0, 0, 0)
         self.drunk_time: float = 0.0
+        self.can_move = True
 
         self.manager = manager
 
@@ -46,7 +49,13 @@ class Pirate(fireable.Fireable):
             Pirate.ANIM_IDLE + "-" + Pirate.ANIM_HOLD: (5, [(0, 3)]),
             Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (5, [(0, 3), (1, 3)]),
             Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_IDLE + "-" + Pirate.ANIM_HOLD: (5, [(0, 3)]),
-            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (5, [(0, 3), (1, 3)])
+            Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (5, [(0, 3), (1, 3)]),
+
+            Pirate.ANIM_DRINK: (3, [(4, 0), (5, 0), (6, 0), (7, 0)])
+        })
+
+        self.drunk_bubbles = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
+            '' : (4, [(2, 4), (3, 4), (4, 4)])
         })
 
     def draw(self, cam: camera.Camera):
@@ -58,6 +67,13 @@ class Pirate(fireable.Fireable):
             self.position, True, scale=consts.DRAW_SCALE,
             rotation=self.sprite_rotation
         )
+
+        if self.drunk_time > 0:
+            cam.blit(
+                self.drunk_bubbles.get_frame(),
+                self.position - pygame.Vector2(0, consts.DRAW_SCALE * 8), True, scale=consts.DRAW_SCALE,
+                zindex=-1
+            )
 
         if consts.DRAW_COLLISION_BOXES:
             cam.with_zindex(lambda s: pygame.draw.rect(s, 'red', cam.w2s_r(self.collision_box), 8), 10)
@@ -71,18 +87,28 @@ class Pirate(fireable.Fireable):
             return
         
         self.anim_tex.tick(dt)
+        self.drunk_bubbles.tick(dt)
 
         if self.fired:
             self.position.y -= fireable.Fireable.FIRE_SPEED * dt * (1 if self.fired_up else -1)
             self.sprite_rotation += fireable.Fireable.FIRE_ROT_SPEED * dt
+            if not self.fired_up and self.position.y >= 200:
+                self.fired = False
+                self.sprite_rotation = 0.0
+
+                self.manager.team_name, self.manager.enemy_team_name = self.manager.enemy_team_name, self.manager.team_name
+                self.manager.boat_health, self.manager.enemy_health = self.manager.enemy_health, self.manager.boat_health
         else:
+
+            if not self.can_move:
+                return
+            
             movement = self.get_movement(dt)
 
             if self.drunk_time > 0:
-                movement = movement.elementwise() * pygame.Vector2(
-                    random.uniform(-1.4, -1.8),
-                    random.uniform(-1.4, -1.8),
-                )
+                if movement.length() != 0:
+                    direction = movement.normalize().yx
+                    movement += direction * math.sin(self.drunk_time * 10) * 0.3
                 self.drunk_time -= dt
 
             anim = Pirate.ANIM_IDLE
@@ -103,7 +129,7 @@ class Pirate(fireable.Fireable):
 
             self.collision_box = self.anim_tex.get_frame().get_rect(center=self.position).scale_by(consts.DRAW_SCALE)
 
-            self.position += movement.elementwise() * dt * self.speed * (0.6 if self.crouched or self.held_item_idx != -1 else 1)
+            self.position += movement.elementwise() * dt * self.speed * (0.6 if self.crouched or self.held_item_idx != -1 else 1) * (1.8 if self.drunk_time > 0 else 1)
 
             if self.manager is not None:
                 for collider in self.manager.fetch_all_colliders():
@@ -126,16 +152,43 @@ class Pirate(fireable.Fireable):
     
     def fire(self, firer: Pirate, cannon: interact.Cannon):
         super().fire(firer, cannon)
+        self.fired_up = True
         self.anim_tex.set_anim(Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_IDLE)
-        def _r():
-                firer.position = pygame.Vector2(200, 200)
-                firer.fired = False
-                firer.sprite_rotation = 0.0
-        event.schedule(_r, 5)
+
+        def _swap():
+            self.fired_up = False
+            self.position.y = -consts.CANVAS_DIMS[1] / 2
+        event.sequence([
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(65), 0.2),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(127), 0.2),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(193), 0.2),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(255), 0.2),
+                    (_swap, 0.0),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(193), 1.0),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(127), 0.2),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(65), 0.2),
+                    (lambda: firer.manager.ship_map.overlay.set_alpha(0), 0.2),
+                ])
 
     def pickup_item(self, item_idx: int):
         self.held_item_idx = item_idx
         self.manager.items[self.held_item_idx].held = True
+
+    def try_get_drunk(self):
+        if self.held_item_idx != -1:
+                if self.manager.items[self.held_item_idx].gets_you_drunk():
+                    def _drink():
+                        self.drunk_time = random.uniform(2.5, 10)
+                        self.can_move = True
+
+                    self.manager.items[self.held_item_idx].removal_mark = True
+                    self.can_move = False
+                    event.sequence(
+                        [
+                            (lambda: self.anim_tex.set_anim(Pirate.ANIM_DRINK, True), 0.0),
+                            (_drink, len(self.anim_tex.anims[Pirate.ANIM_DRINK][1]) / self.anim_tex.anims[Pirate.ANIM_DRINK][0]),
+                        ]
+                    )
 
 class PlayerPirate(Pirate):
 
@@ -218,10 +271,7 @@ class PlayerPirate(Pirate):
 
         
         if drink:
-            if self.held_item_idx != -1:
-                if self.manager.items[self.held_item_idx].gets_you_drunk():
-                    self.drunk_time = random.uniform(2.5, 5)
-                    self.manager.items[self.held_item_idx].removal_mark = True
+            self.try_get_drunk()
 
 class NPCPirate(Pirate):
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
@@ -257,6 +307,8 @@ class PirateBrain(brain.Brain[NPCPirate]):
         self.add_task(FindItemTask, 1)
         self.add_task(PickUpItemTask, 1)
         self.add_task(FireCannonTask, 1)
+        self.add_task(GetPissedTask, 10)
+        self.add_task(RepairBoatTask, 8)
 
 class WalkToPositionTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:
@@ -288,19 +340,23 @@ class FindItemTask(brain.Task[NPCPirate]):
         if len(l) <= 0:
             return
         self.target = l[random.randint(0, len(l) - 1)]
+        self.done = False
 
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
         super().process(dt, cam, t)
         t.target_position = t.manager.interactables[self.target].position.copy()
 
-        if t.position.distance_squared_to(t.manager.interactables[self.target].position) <= t.reach ** 2 and t.held_item_idx == -1:
+        if t.position.distance_squared_to(t.manager.interactables[self.target].position) <= (t.reach * 2) ** 2 and t.held_item_idx == -1:
             cl = t.manager.interactables[self.target]
             if isinstance(cl, interact.ItemBarrel):
                 if cl.cooldown <= 0:
                     cl.interact(t)
+                    self.done = True
+                    t.target_position = t.position.copy()
+
     
     def can_finish(self, t: NPCPirate) -> bool:
-        return t.held_item_idx != -1
+        return t.held_item_idx != -1 or self.done
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx == -1 and len(t.manager.interactables) > 0
@@ -362,3 +418,43 @@ class FireCannonTask(brain.Task[NPCPirate]):
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1 and len(t.manager.interactables) > 0 and t.manager.items[t.held_item_idx].causes_damage()
+    
+class GetPissedTask(brain.Task[NPCPirate]):
+
+    def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
+        t.try_get_drunk()
+
+    def prereq(self, t: NPCPirate) -> bool:
+        return t.held_item_idx != -1 and t.manager.items[t.held_item_idx].gets_you_drunk()
+    
+    def can_finish(self, t: NPCPirate) -> bool:
+        return t.held_item_idx == 1
+    
+class RepairBoatTask(brain.Task[NPCPirate]):
+    def __init__(self) -> None:
+        super().__init__()
+
+        self.target: int = -1
+        
+    
+    def start(self, t: NPCPirate):
+        l = list(filter(lambda idx: isinstance(t.manager.interactables[idx], interact.DamageSpot), t.manager.interactables.keys()))
+        if len(l) <= 0:
+            return
+        self.target = l[random.randint(0, len(l) - 1)]
+
+    def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
+        super().process(dt, cam, t)
+        t.target_position = t.manager.interactables[self.target].position.copy()
+
+        if t.position.distance_squared_to(t.manager.interactables[self.target].position) <= t.reach ** 2 and t.held_item_idx != -1:
+            cl = t.manager.interactables[self.target]
+            if isinstance(cl, interact.DamageSpot):
+                cl.interact(t)
+    
+    def can_finish(self, t: NPCPirate) -> bool:
+        return t.held_item_idx == -1 or not self.target in t.manager.interactables
+
+    def prereq(self, t: NPCPirate) -> bool:
+        return t.held_item_idx != -1 and len(list(filter(lambda idx: isinstance(t.manager.interactables[idx], interact.DamageSpot), t.manager.interactables.keys()))) > 0 and t.manager.items[t.held_item_idx].fixes_damage()
+ 

@@ -43,10 +43,18 @@ class Ship():
             32
         )
 
+        self.overlay = pygame.Surface(consts.CANVAS_DIMS)
+        self.overlay.set_alpha(0)
+        self.overlay.fill(0x0)
+
         self.map_colliders = map.MapRenderer.compile_colliders(self.map_data, consts.DRAW_SCALE, pygame.Vector2())
 
     def draw(self, cam: camera.Camera):
         map.MapRenderer.draw_map(cam, pygame.Vector2(), self.map_data, consts.DRAW_SCALE)
+
+        v = self.overlay.get_alpha()
+        if v is not None and v > 0:
+            cam.with_zindex_blit((self.overlay, pygame.Vector2()), False, 999)
 
     def get_tile_center(self, cam: camera.Camera, x: float, y: float) -> pygame.Vector2:
         return map.MapRenderer.get_tile_center(
@@ -54,4 +62,6 @@ class Ship():
         )
 
     def update(self, dt: float, cam: camera.Camera):
-        pass
+       pass
+
+    

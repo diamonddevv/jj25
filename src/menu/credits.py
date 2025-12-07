@@ -15,23 +15,25 @@ from src.menu import mainmenu
 
 class CreditsScene(menu.MenuScene):
     TEXT: str = """
-       Thank you to everyone who made this game possible!
+         Thank you to everyone who made this game possible!
 
               PROGRAMMING:        Fynn (DiamondDev)
-                   DESIGN:        Fynn (DiamondDev), Euan Stables
-                      ART:        Fynn (DiamondDev)
+                   DESIGN:        Fynn, Euan Stables
+                      ART:        Fynn
+
+                           & more.
 
      Special Thanks to:          Made with:
-            - Team impROVise        - pygame-ce 2.5.6
-                                   - Python 3.14.1
+            - Team impROVise,       - pygame-ce 2.5.6
+              for supporting me     - Python 3.14.1
                                    - Aseprite
                                    - Microsoft VSCode
                                    - JSFXR
 
 
-    This game was made for the Annual Yogscast Jingle Jam.
+    This game was made in 1 week for the Annual Yogscast Jingle Jam.
     Since 2011, they have raised over £27M for several good causes.
-    Donate at https://www.jinglejam.co.uk/.
+                Donate at https://www.jinglejam.co.uk/.
 
 
                        From Scotland with <3!
@@ -39,14 +41,14 @@ class CreditsScene(menu.MenuScene):
 
     def __init__(self, camera: camera.Camera) -> None:
         super().__init__(camera)
-        camera.fill_col = 0xffffff
+        camera.fill_col = 0x2890dc
 
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 125),
                       lambda: "Credits", 3, 0x000000, centered=True, sfsans=True)
         )
         self.container.add(
-            ui.UiTexture(pygame.Vector2(consts.CANVAS_DIMS[0] / 2 - 200, consts.CANVAS_DIMS[1] / 2 + 24), 'res/astrid.png', scale=2)
+            ui.UiTexture(pygame.Vector2(consts.CANVAS_DIMS[0] / 2 - 200, consts.CANVAS_DIMS[1] / 2 + 64), 'res/astrid.png', scale=2)
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
@@ -60,7 +62,7 @@ class CreditsScene(menu.MenuScene):
                     pygame.Event(event.CHANGE_SCENE, {
                         'scene': mainmenu.MainMenu
                     })
-                ), 0x6a6a6a, centered=True
+                ), 0x000000, centered=True
             )
         )
 

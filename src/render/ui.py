@@ -7,6 +7,7 @@ from src import util
 from src.render import camera
 from src.render import text
 from src.game import pirate
+from src.game import ship
 
 class UiContainer():
     def __init__(self) -> None:
@@ -92,6 +93,7 @@ class UiPirate(UiElement):
     def __init__(self, position: pygame.Vector2, p: pirate.Pirate) -> None:
         super().__init__(position)
         self.pirate = p
+        self.ship = ship.Ship()
         self.pirate.position = self.position
 
         self.reverse = False
@@ -101,10 +103,12 @@ class UiPirate(UiElement):
 
     def draw(self, cam: camera.Camera):
         super().draw(cam)
+        self.ship.draw(cam)
         self.pirate.draw(cam.absolute())
 
     def update(self, dt: float, cam: camera.Camera):
         super().update(dt, cam)
+        cam.focus = pygame.Vector2(16 * consts.DRAW_SCALE * 16, 16 * consts.DRAW_SCALE * -4)
         self.pirate.update(dt, cam.absolute())
 
         self.pirate.position.x += self.pirate.speed * dt / 2 * (-1 if self.reverse else 1)

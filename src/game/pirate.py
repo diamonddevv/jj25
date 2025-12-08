@@ -15,6 +15,7 @@ from src.game import interact
 from src.game import fireable
 from src.game import brain
 from src.game import ship
+from src.menu import lose
 
 from src.game import manager
 
@@ -24,6 +25,10 @@ class Pirate(fireable.Fireable):
     ANIM_CROUCH: str = 'crouch'
     ANIM_HOLD: str = 'hold'
     ANIM_DRINK: str = 'drink'
+    ANIM_DIE: str = 'die'
+    ANIM_EAT: str = 'eat'
+
+    SCURVY_TIME: float = 30.0
 
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
         super().__init__()
@@ -36,6 +41,7 @@ class Pirate(fireable.Fireable):
         self.held_item_idx: int = -1
         self.collision_box = pygame.Rect(0, 0, 0, 0)
         self.drunk_time: float = 0.0
+        self.scurvy_time: float = Pirate.SCURVY_TIME
         self.can_move = True
 
         self.manager = manager
@@ -51,19 +57,25 @@ class Pirate(fireable.Fireable):
             Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_IDLE + "-" + Pirate.ANIM_HOLD: (5, [(0, 3)]),
             Pirate.ANIM_CROUCH + "-" + Pirate.ANIM_RUN + "-" + Pirate.ANIM_HOLD: (5, [(0, 3), (1, 3)]),
 
-            Pirate.ANIM_DRINK: (3, [(4, 0), (5, 0), (6, 0), (7, 0)])
+            Pirate.ANIM_DRINK: (3, [(4, 0), (5, 0), (6, 0), (7, 0)]),
+            Pirate.ANIM_DIE: (3, [(4, 1), (5, 1), (6, 1), (7, 1)]),
+            Pirate.ANIM_EAT: (3, [(4, 2), (5, 2), (6, 2), (7, 2)]),
         })
         # this texture is very important to me
         # i designed it last year for a project i never finished
         # that project never went anywhere because i couldnt make a good idea out of it
-        # but i love the texture and i love the person who i designed it with
+        # but i love the texture and i love the person who i designed it with, even though they are gone
         # so it was important to me that i used it for something
-        # if for some reason you are reading this, l, i love you
+        # if for some reason you are reading this, L, i still love you
 
 
         self.drunk_bubbles = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
             '' : (4, [(2, 4), (3, 4), (4, 4)])
         })
+
+        self.pickup_sound = pygame.mixer.Sound('res/sound/pickup.wav')
+        self.drink_sound = pygame.mixer.Sound('res/sound/drink.wav')
+        self.eat_sound = pygame.mixer.Sound('res/sound/eat.wav')
 
     def draw(self, cam: camera.Camera):
         if self.hidden:
@@ -117,6 +129,17 @@ class Pirate(fireable.Fireable):
                     direction = movement.normalize().yx
                     movement += direction * math.sin(self.drunk_time * 10) * 0.3
                 self.drunk_time -= dt
+
+            self.scurvy_time -= dt
+            if self.scurvy_time <= 0.0:
+                self.can_move = False
+                event.sequence(
+                    [
+                        (lambda: self.anim_tex.set_anim(Pirate.ANIM_DIE, True, loop=False), 0.0),
+                        (self.die_of_scurvy, len(self.anim_tex.anims[Pirate.ANIM_DIE][1]) / self.anim_tex.anims[Pirate.ANIM_DIE][0])
+                    ]
+                )
+                
 
             anim = Pirate.ANIM_IDLE
             if movement != pygame.Vector2():
@@ -180,22 +203,44 @@ class Pirate(fireable.Fireable):
     def pickup_item(self, item_idx: int):
         self.held_item_idx = item_idx
         self.manager.items[self.held_item_idx].held = True
+        self.pickup_sound.play()
 
     def try_get_drunk(self):
         if self.held_item_idx != -1:
-                if self.manager.items[self.held_item_idx].gets_you_drunk():
-                    def _drink():
-                        self.drunk_time = random.uniform(2.5, 10)
-                        self.can_move = True
+            if self.manager.items[self.held_item_idx].gets_you_drunk():
+                def _drink():
+                    self.drink_sound.play()
+                    self.drunk_time = random.uniform(2.5, 10)
+                    self.can_move = True
 
-                    self.manager.items[self.held_item_idx].removal_mark = True
-                    self.can_move = False
-                    event.sequence(
-                        [
-                            (lambda: self.anim_tex.set_anim(Pirate.ANIM_DRINK, True), 0.0),
-                            (_drink, len(self.anim_tex.anims[Pirate.ANIM_DRINK][1]) / self.anim_tex.anims[Pirate.ANIM_DRINK][0]),
-                        ]
-                    )
+                self.manager.items[self.held_item_idx].removal_mark = True
+                self.can_move = False
+                event.sequence(
+                    [
+                        (lambda: self.anim_tex.set_anim(Pirate.ANIM_DRINK, True), 0.0),
+                        (_drink, len(self.anim_tex.anims[Pirate.ANIM_DRINK][1]) / self.anim_tex.anims[Pirate.ANIM_DRINK][0]),
+                    ]
+                )
+
+    def try_eat_lemon(self):
+        if self.held_item_idx != -1:
+            if self.manager.items[self.held_item_idx].cures_scurvy():
+                def _eat():
+                    self.eat_sound.play()
+                    self.scurvy_time = Pirate.SCURVY_TIME
+                    self.can_move = True
+
+                self.manager.items[self.held_item_idx].removal_mark = True
+                self.can_move = False
+                event.sequence(
+                    [
+                        (lambda: self.anim_tex.set_anim(Pirate.ANIM_EAT, True), 0.0),
+                        (_eat, len(self.anim_tex.anims[Pirate.ANIM_EAT][1]) / self.anim_tex.anims[Pirate.ANIM_EAT][0]),
+                    ]
+                )
+
+    def die_of_scurvy(self):
+        pass
 
 class PlayerPirate(Pirate):
 
@@ -205,7 +250,7 @@ class PlayerPirate(Pirate):
     KEY_RIGHT: int = pygame.K_d
     KEY_CROUCH: int = pygame.K_LSHIFT
     KEY_INTERACT: int = pygame.K_SPACE
-    KEY_DRINK: int = pygame.K_e
+    KEY_USE: int = pygame.K_e
 
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
         super().__init__(manager, pos)
@@ -249,7 +294,7 @@ class PlayerPirate(Pirate):
         self.arrow.tick(dt)
 
         pressed_interact = pygame.key.get_just_pressed()[PlayerPirate.KEY_INTERACT]
-        drink = pygame.key.get_just_pressed()[PlayerPirate.KEY_DRINK]
+        use = pygame.key.get_just_pressed()[PlayerPirate.KEY_USE]
 
         for idx in self.manager.interactables:
             self.manager.interactables[idx].highlight = False
@@ -277,8 +322,18 @@ class PlayerPirate(Pirate):
                     self.held_item_idx = -1
 
         
-        if drink:
+        if use:
             self.try_get_drunk()
+            self.try_eat_lemon()
+
+    def die_of_scurvy(self):
+        event.schedule(lambda: pygame.event.post(pygame.event.Event(
+            event.CHANGE_SCENE,
+            {
+                'scene': lose.LoseScene,
+                'ctx': [True]
+            }
+        )), 1.0)
 
 class NPCPirate(Pirate):
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
@@ -292,6 +347,7 @@ class NPCPirate(Pirate):
     def update(self, dt: float, cam: camera.Camera):
         super().update(dt, cam)
         self.brain.update(dt, cam, self)
+        self.scurvy_time = Pirate.SCURVY_TIME # its easier to just let the mateys be immune to scurvy lol
         self.at_target = self.position.distance_squared_to(self.target_position) <= self.target_pos_tolerance ** 2
 
     def get_movement(self, dt: float) -> pygame.Vector2:
@@ -315,6 +371,7 @@ class PirateBrain(brain.Brain[NPCPirate]):
         self.add_task(PickUpItemTask, 1)
         self.add_task(FireCannonTask, 1)
         self.add_task(GetPissedTask, 10)
+        self.add_task(EatLemonTask, 10)
         self.add_task(RepairBoatTask, 8)
 
 class WalkToPositionTask(brain.Task[NPCPirate]):
@@ -392,7 +449,7 @@ class PickUpItemTask(brain.Task[NPCPirate]):
         return len(t.manager.items) > 0 and t.held_item_idx == -1
 
     def can_finish(self, t: NPCPirate) -> bool:
-        return self.target == -1 or not t.manager.items[self.target].can_be_picked_up()
+        return self.target == -1 or not t.manager.items[self.target].can_be_picked_up() and t.manager.items[self.target].ai_picks_up()
 
 class FireCannonTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:
@@ -424,7 +481,7 @@ class FireCannonTask(brain.Task[NPCPirate]):
         return t.held_item_idx == -1 or c.cooldown > 0
 
     def prereq(self, t: NPCPirate) -> bool:
-        return t.held_item_idx != -1 and len(t.manager.interactables) > 0 and t.manager.items[t.held_item_idx].causes_damage()
+        return t.held_item_idx != -1 and len(t.manager.interactables) > 0 and t.manager.items[t.held_item_idx].ai_launches()
     
 class GetPissedTask(brain.Task[NPCPirate]):
 
@@ -434,6 +491,18 @@ class GetPissedTask(brain.Task[NPCPirate]):
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1 and t.manager.items[t.held_item_idx].gets_you_drunk()
+    
+    def can_finish(self, t: NPCPirate) -> bool:
+        return t.held_item_idx == -1
+    
+class EatLemonTask(brain.Task[NPCPirate]):
+
+    def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
+        super().process(dt, cam, t)
+        t.try_eat_lemon()
+
+    def prereq(self, t: NPCPirate) -> bool:
+        return t.held_item_idx != -1 and t.manager.items[t.held_item_idx].cures_scurvy()
     
     def can_finish(self, t: NPCPirate) -> bool:
         return t.held_item_idx == -1

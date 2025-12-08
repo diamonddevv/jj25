@@ -14,8 +14,8 @@ from src.game import manager
 
 class GameScene(scene.Scene):
 
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
         
         camera.fill_col = 0x2890dc
 

@@ -15,8 +15,8 @@ from src.menu import mainmenu
 
 class WinScene(menu.MenuScene):
 
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
         self.container.add(
@@ -33,9 +33,10 @@ class WinScene(menu.MenuScene):
                 pygame.Vector2(consts.CANVAS_DIMS[0] / 2, consts.CANVAS_DIMS[1] - 128),
                 lambda: "ok", 4, lambda: pygame.event.post(
                     pygame.Event(event.CHANGE_SCENE, {
-                        'scene': mainmenu.MainMenu
+                        'scene': mainmenu.MainMenu,
+                        'ctx': ()
                     })
-                ), 0x6a6a6a, centered=True
+                ), 0x000000, centered=True
             )
         )
 

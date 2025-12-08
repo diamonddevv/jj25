@@ -6,8 +6,8 @@ from src.render import ui
 
 
 class MenuScene(scene.Scene):
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
 
         self.container = ui.UiContainer()
 

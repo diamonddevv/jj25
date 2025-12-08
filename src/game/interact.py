@@ -50,6 +50,7 @@ class Cannon(Interactable):
                                                 })
         
         self.cooldown = 0.0
+        
 
     def draw(self, cam: camera.Camera):
         cam.blit(
@@ -128,6 +129,7 @@ class ItemBarrel(Interactable):
                                                 })
         
         self.cooldown = 0.0
+        self.barrel_sound = pygame.mixer.Sound('res/sound/barrel.wav')
 
     def draw(self, cam: camera.Camera):
         cam.blit(
@@ -178,10 +180,13 @@ class ItemBarrel(Interactable):
     def add_item(self, user: pirate.Pirate):
         if user.held_item_idx != -1:
             return
-        
-        i = item.Item(random.randint(0, len(item.Item.ITEMS) - 1))
+
+        i: item.Item | None = None
+        while i is None or not i.in_barrels() or (isinstance(user, pirate.NPCPirate) and not i.ai_picks_up()):
+            i = item.Item(random.randint(0, len(item.Item.ITEMS) - 1))
         idx = user.manager.add_item(i)
         user.pickup_item(idx)
+        self.barrel_sound.play()
 
     def can_highlight(self) -> bool:
         return self.cooldown <= 0
@@ -201,6 +206,7 @@ class DamageSpot(Interactable):
             
             self.idx = idx
             self.damage = damage
+            self.repair_sound = pygame.mixer.Sound('res/sound/repair.wav')
 
         def draw(self, cam: camera.Camera):
             cam.blit(
@@ -218,3 +224,4 @@ class DamageSpot(Interactable):
                     user.manager.items[user.held_item_idx].removal_mark = True
                     user.manager.interactables[self.idx].removal_mark = True
                     user.manager.boat_health += self.damage
+                    self.repair_sound.play()

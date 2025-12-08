@@ -19,6 +19,7 @@ class CreditsScene(menu.MenuScene):
 
               PROGRAMMING:        Fynn (DiamondDev)
                    DESIGN:        Fynn, Euan Stables
+                    MUSIC:        Euan Stables
                       ART:        Fynn
 
                            & more.
@@ -39,8 +40,8 @@ class CreditsScene(menu.MenuScene):
                        From Scotland with <3!
 """
 
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
         self.container.add(
@@ -60,7 +61,8 @@ class CreditsScene(menu.MenuScene):
                 pygame.Vector2(consts.CANVAS_DIMS[0] / 2, consts.CANVAS_DIMS[1] - 128),
                 lambda: "Back", 4, lambda: pygame.event.post(
                     pygame.Event(event.CHANGE_SCENE, {
-                        'scene': mainmenu.MainMenu
+                        'scene': mainmenu.MainMenu,
+                        'ctx': ()
                     })
                 ), 0x000000, centered=True
             )

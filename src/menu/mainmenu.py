@@ -14,8 +14,8 @@ from src.menu import credits
 
 
 class MainMenu(menu.MenuScene):
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
         self.container.add(
@@ -34,7 +34,8 @@ class MainMenu(menu.MenuScene):
                 pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 500),
                 lambda: "Play", 4, lambda: pygame.event.post(
                     pygame.Event(event.CHANGE_SCENE, {
-                        'scene': game.GameScene
+                        'scene': game.GameScene,
+                        'ctx': ()
                     })
                 ), 0x000000, centered=True
             )
@@ -44,7 +45,8 @@ class MainMenu(menu.MenuScene):
                 pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 600),
                 lambda: "Credits", 4, lambda: pygame.event.post(
                     pygame.Event(event.CHANGE_SCENE, {
-                        'scene': credits.CreditsScene
+                        'scene': credits.CreditsScene,
+                        'ctx': ()
                     })
                 ), 0x000000, centered=True
             )

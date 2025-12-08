@@ -23,9 +23,69 @@ class Window():
         self.keep_open = False
 
         self.camera = camera.Camera(self.window)
-        self.scene_manager = scene.SceneManager(self.camera, default_scene)
+        self.scene_manager = scene.SceneManager(self.camera, default_scene, ())
 
-        event.CallbackManager.register(event.CHANGE_SCENE, lambda d: self.scene_manager.change(self.camera, d['scene']))
+        self.music = pygame.mixer.music.load('res/sound/pirate-plunder.wav')
+        pygame.mixer.music.play(-1)
+
+        event.CallbackManager.register(event.CHANGE_SCENE, lambda d: self.scene_manager.change(self.camera, d['scene'], d['ctx']))
+
+
+        #
+        """
+        surface = pygame.Surface((630, 500))
+
+        
+        ship_spr = spritesheet.Spritesheet(util.load_texture('res/ship.png'))
+        for x in range(100):
+            for y in range(100):
+                c = ship_spr.get_cell(0, 0)
+                surface.blit(
+                    pygame.transform.scale_by(c, 8), (x * 16 * 8, y * 16 * 8)
+                )
+        
+        player_spr = spritesheet.Spritesheet(util.load_texture('res/pirate.png'))
+        c = player_spr.get_cell(1, 1)
+        surface.blit(
+            pygame.transform.scale_by(c, 8), 
+            (
+                100,
+                surface.height / 2 - c.height / 2 + 100,
+            )
+        )
+
+        items_spr = spritesheet.Spritesheet(util.load_texture('res/items.png'))
+        c = items_spr.get_cell(0, 0)
+        surface.blit(
+            pygame.transform.scale_by(c, 8), 
+            (
+                surface.width - 8*16 - 100,
+                surface.height / 2 - c.height / 2 + 100,
+            )
+        )
+
+
+        ddv = util.load_texture('res/ddv.png')
+        surface.blit(
+            pygame.transform.scale_by(ddv, 0.1), 
+            (
+                20, 20
+            )
+        )
+
+        t = text.sfsans().render_adv("cap' itulate", 3, 0x00)
+        surface.blit(t, pygame.Vector2(
+            surface.width / 2 - t.width / 2 - 4,
+            surface.height / 2 - t.height / 2 + 4,
+        ))
+        t = text.sfsans().render_adv("cap' itulate", 3)
+        surface.blit(t, pygame.Vector2(
+            surface.width / 2 - t.width / 2,
+            surface.height / 2 - t.height / 2,
+        ))
+        pygame.image.save(
+            surface, 'promo/banner.png'
+        )"""
 
     def init_resources(self):
         text.PixelFont.init_pixelfonts()

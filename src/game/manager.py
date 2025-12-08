@@ -95,6 +95,9 @@ class GameManager():
                     pygame.Vector2(consts.CANVAS_DIMS[0]/2, 65)
                 ), centered=True, zindex=consts.HUD_LAYER
             )
+        
+        # scurvy timer
+        self.draw_scurvy_bar(cam)
 
         if self.player.held_item_idx != -1:
             cam.with_zindex_blit(
@@ -107,6 +110,13 @@ class GameManager():
                 cam.with_zindex_blit(
                 (
                     text.glyphxel().render_adv(f"Press E to drink", 2),
+                    pygame.Vector2(20, 60)
+                ), zindex=consts.HUD_LAYER
+            )
+            if self.items[self.player.held_item_idx].cures_scurvy():
+                cam.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Press E to eat", 2),
                     pygame.Vector2(20, 60)
                 ), zindex=consts.HUD_LAYER
             )
@@ -162,14 +172,16 @@ class GameManager():
         if self.enemy_health <= 0.0:
             pygame.event.post(
                 pygame.Event(event.CHANGE_SCENE, {
-                    'scene': win.WinScene
+                    'scene': win.WinScene,
+                    'ctx': ()
                 })
             )
 
         if self.boat_health <= 0.0:
             pygame.event.post(
                 pygame.Event(event.CHANGE_SCENE, {
-                    'scene': lose.LoseScene
+                    'scene': lose.LoseScene,
+                    'ctx': (False)
                 })
             )
 
@@ -198,6 +210,36 @@ class GameManager():
             i.fired_up = False
             self.add_item(i)
             self.next_enemy_fire = random.uniform(2, 10)
+
+    def draw_scurvy_bar(self, cam: camera.Camera):
+        cam.with_zindex(
+                lambda s: pygame.draw.rect(s, 0x000000,
+                    pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 220, 20),
+                        pygame.Vector2(200, 20),
+                    )
+                ), zindex=consts.HUD_LAYER
+            )
+        cam.with_zindex(
+                lambda s: s.blit(text.glyphxel().render_adv('Scurvy-o-meter: ', 2, 0x0),
+                                 pygame.Vector2(consts.CANVAS_DIMS[0] - 470, 8)), zindex=consts.HUD_LAYER
+            )
+        cam.with_zindex(
+            lambda s: pygame.draw.rect(s, 0xffffff,
+                pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25),
+                        pygame.Vector2(190, 10),
+                    )
+            ), zindex=consts.HUD_LAYER
+        )
+        cam.with_zindex(
+            lambda s: pygame.draw.rect(s, 0x00ff00,
+                pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25),
+                        pygame.Vector2(190 * (self.player.scurvy_time / self.player.SCURVY_TIME), 10),
+                    )
+            ), zindex=consts.HUD_LAYER
+        )
 
     @staticmethod
     def resolve_team_name(prefix: int, suffix: int) -> str:

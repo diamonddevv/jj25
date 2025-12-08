@@ -17,14 +17,21 @@ class Item(fireable.Fireable):
         float, # dmg mult
         bool, # spawns damage marks
         bool, # fixes damage marks
-        bool # gets you drunk
+        bool, # gets you drunk
+        bool, # cures scurvy
+        bool, # ais launch
+        bool, # ais pick up
+        bool # in barrels
     ]
 
     ITEMS: list[_ItemEntry] = [
-        ((0, 0), "Cannonball", 3.0, True, False, False),
-        ((1, 0), "Bottle o' Rum", 1.2, True, False, True),
-        ((2, 0), "Parrot", 0.4, True, False, False),
-        ((3, 0), "Wood", 0, False, True, False),
+        ((0, 0), "Cannonball", 3.0, True, False, False, False, True, True, True),
+        ((1, 0), "Bottle o' Rum", 0.8, True, False, True, False, True, True, True),
+        ((2, 0), "Parrot", 0.2, True, False, False, False, True, True, True),
+        ((3, 0), "Wood", 0, False, True, False, False, False, True, True),
+        ((4, 0), "Lemon", 0.8, False, False, False, True, True, True, True),
+        ((5, 0), "Perished Matey", 2.5, True, False, False, False, False, False, True),
+        ((6, 0), "Jar of Dirt", 5, True, False, False, False, True, True, True),
     ]
 
     
@@ -66,6 +73,18 @@ class Item(fireable.Fireable):
     
     def gets_you_drunk(self) -> bool:
         return Item.ITEMS[self.id][5]
+    
+    def cures_scurvy(self) -> bool:
+        return Item.ITEMS[self.id][6]
+    
+    def ai_launches(self) -> bool:
+        return Item.ITEMS[self.id][7]
+    
+    def ai_picks_up(self) -> bool:
+        return Item.ITEMS[self.id][8]
+    
+    def in_barrels(self) -> bool:
+        return Item.ITEMS[self.id][9]
     
     def set_position(self, position: pygame.Vector2):
         self.position = position

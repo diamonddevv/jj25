@@ -16,6 +16,7 @@ class Fireable():
         self.hidden = False
         self.fired = False
         self.fired_up = True
+        self.cannon_sound = pygame.mixer.Sound('res/sound/cannon.wav')
 
     def hide(self):
         self.hidden = True
@@ -27,6 +28,7 @@ class Fireable():
     def fire(self, firer: pirate.Pirate, cannon: interact.Cannon):
         self.set_position(cannon.position.copy() - pygame.Vector2(0, consts.DRAW_SCALE * 4))
         self.fired = True
+        self.cannon_sound.play()
 
     def set_position(self, position: pygame.Vector2):
         pass

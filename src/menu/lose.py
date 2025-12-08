@@ -15,8 +15,8 @@ from src.menu import mainmenu
 
 class LoseScene(menu.MenuScene):
 
-    def __init__(self, camera: camera.Camera) -> None:
-        super().__init__(camera)
+    def __init__(self, camera: camera.Camera, ctx: tuple) -> None:
+        super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
         self.container.add(
@@ -25,7 +25,11 @@ class LoseScene(menu.MenuScene):
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
-                      lambda: "your ship sinked lol\n(how did you even lose)", 2, 0x000000, centered=True)
+                      lambda: (
+                          "Your crew was overpowered by the enemies.."
+                      ) if not ctx[0] else (
+                          "You died of scurvy :(\n(maybe eat more lemons next time..)"
+                      ), 2, 0x000000, centered=True)
         )
         
         self.container.add(
@@ -33,9 +37,10 @@ class LoseScene(menu.MenuScene):
                 pygame.Vector2(consts.CANVAS_DIMS[0] / 2, consts.CANVAS_DIMS[1] - 128),
                 lambda: "ok", 4, lambda: pygame.event.post(
                     pygame.Event(event.CHANGE_SCENE, {
-                        'scene': mainmenu.MainMenu
+                        'scene': mainmenu.MainMenu,
+                        'ctx': ()
                     })
-                ), 0x6a6a6a, centered=True
+                ), 0x000000, centered=True
             )
         )
 

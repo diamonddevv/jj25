@@ -48,25 +48,6 @@ class Window():
                     pygame.transform.scale_by(c, 8), (x * 16 * 8, y * 16 * 8)
                 )
         
-        player_spr = spritesheet.Spritesheet(util.load_texture('res/pirate.png'))
-        c = player_spr.get_cell(1, 1)
-        surface.blit(
-            pygame.transform.scale_by(c, 8), 
-            (
-                100,
-                surface.height / 2 - c.height / 2 + 100,
-            )
-        )
-
-        items_spr = spritesheet.Spritesheet(util.load_texture('res/items.png'))
-        c = items_spr.get_cell(0, 0)
-        surface.blit(
-            pygame.transform.scale_by(c, 8), 
-            (
-                surface.width - 8*16 - 100,
-                surface.height / 2 - c.height / 2 + 100,
-            )
-        )
 
 
         ddv = util.load_texture('res/ddv.png')
@@ -89,7 +70,8 @@ class Window():
         ))
         pygame.image.save(
             surface, 'promo/banner.png'
-        )"""
+        )
+        """
 
     def init_resources(self):
         text.PixelFont.init_pixelfonts()

@@ -28,7 +28,7 @@ class Interactable():
     def interact(self, user: pirate.Pirate):
         pass
 
-    def can_highlight(self) -> bool:
+    def can_highlight(self, user: pirate.Pirate) -> bool:
         return True
 
 class Cannon(Interactable):
@@ -109,7 +109,7 @@ class Cannon(Interactable):
                 (lambda: fireable.fire(firer, self), 0.0)
             ])
 
-    def can_highlight(self) -> bool:
+    def can_highlight(self, user: pirate.Pirate) -> bool:
         return self.cooldown <= 0
 
 class ItemBarrel(Interactable):
@@ -188,7 +188,7 @@ class ItemBarrel(Interactable):
         user.pickup_item(idx)
         self.barrel_sound.play()
 
-    def can_highlight(self) -> bool:
+    def can_highlight(self, user: pirate.Pirate) -> bool:
         return self.cooldown <= 0
     
 class DamageSpot(Interactable):
@@ -225,3 +225,6 @@ class DamageSpot(Interactable):
                     user.manager.interactables[self.idx].removal_mark = True
                     user.manager.boat_health += self.damage
                     self.repair_sound.play()
+
+        def can_highlight(self, user: pirate.Pirate) -> bool:
+            return super().can_highlight(user) and user.held_item_idx != -1 and user.manager.items[user.held_item_idx].fixes_damage()

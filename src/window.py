@@ -25,7 +25,8 @@ class Window():
         self.camera = camera.Camera(self.window)
         self.scene_manager = scene.SceneManager(self.camera, default_scene, ())
 
-        self.music = pygame.mixer.music.load('res/sound/pirate-plunder.wav')
+        pygame.mixer.music.load('res/sound/pirate-plunder.wav')
+        pygame.mixer.music.set_volume(0.25)
         pygame.mixer.music.play(-1)
 
         event.CallbackManager.register(event.CHANGE_SCENE, lambda d: self.scene_manager.change(self.camera, d['scene'], d['ctx']))

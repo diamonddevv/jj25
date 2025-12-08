@@ -20,7 +20,7 @@ class GameManager():
         self.camera = cam
 
         self.ship_map = ship.Ship()
-        self.active_pirates: list[pirate.Pirate] = [pirate.NPCPirate(self, self.ship_map.get_tile_center(self.camera, 2 + i, 3)) for i in range(7)]
+        self.active_pirates: list[pirate.Pirate] = [pirate.NPCPirate(self, self.ship_map.get_tile_center(self.camera, 15 + i * (-1 if i % 2 == 0 else 1), 3)) for i in range(7)]
         
         self._next_item_idx: int = 0
         self.items: dict[int, item.Item] = {} 
@@ -29,7 +29,7 @@ class GameManager():
         self.interactables: dict[int, interact.Interactable] = {}
         self.add_interactables()
 
-        self.player = pirate.PlayerPirate(self, self.ship_map.get_tile_center(cam, 3, 3))
+        self.player = pirate.PlayerPirate(self, self.ship_map.get_tile_center(cam, 15, 3))
         self.active_pirates.append(self.player)
 
         seq = [i for i in range(10)]
@@ -41,6 +41,8 @@ class GameManager():
         self.enemy_health: float = 100.0
 
         self.next_enemy_fire: float = 0.0
+
+        self.damage_sound = pygame.mixer.Sound('res/sound/damage.wav')
 
     def add_item(self, item: item.Item) -> int:
         self.items[self._next_item_idx] = item
@@ -82,10 +84,14 @@ class GameManager():
         self.ship_map.draw(cam)
 
         # hud
+        pos_mod = pygame.Vector2()
+        if self.boat_health <= 25:
+            pos_mod = pygame.Vector2(random.uniform(-5, 5), random.uniform(-5, 5))
+
         cam.with_zindex_blit(
                 (
                     text.glyphxel().render_adv(f"{self.team_name} (Good Guys): {self.boat_health:.1f}% ship integrity", 2, color=0x005f41),
-                    pygame.Vector2(consts.CANVAS_DIMS[0]/2, 25)
+                    pygame.Vector2(consts.CANVAS_DIMS[0]/2, 25) + pos_mod
                 ), centered=True, zindex=consts.HUD_LAYER
             )
         
@@ -95,9 +101,9 @@ class GameManager():
                     pygame.Vector2(consts.CANVAS_DIMS[0]/2, 65)
                 ), centered=True, zindex=consts.HUD_LAYER
             )
-        
-        # scurvy timer
+    
         self.draw_scurvy_bar(cam)
+        self.draw_drunk_bar(cam)
 
         if self.player.held_item_idx != -1:
             cam.with_zindex_blit(
@@ -120,6 +126,13 @@ class GameManager():
                     pygame.Vector2(20, 60)
                 ), zindex=consts.HUD_LAYER
             )
+        else:
+            cam.with_zindex_blit(
+                (
+                    text.glyphxel().render_adv(f"Press <space> to interact", 2),
+                    pygame.Vector2(20, 20)
+                ), zindex=consts.HUD_LAYER
+            )
 
     def update(self, dt: float, cam: camera.Camera):
         self.try_random_enemy_fire(dt)
@@ -140,7 +153,7 @@ class GameManager():
                         self.items[idx].rotation = 0.0
 
                     damage = random.uniform(1, 5) * self.items[idx].damage_mult()
-                    
+
                     if self.items[idx].fired_up:
                         self.enemy_health -= damage
                     else:
@@ -148,6 +161,7 @@ class GameManager():
 
                         if self.items[idx].causes_damage():
                             self.add_interactable_idx(lambda i: interact.DamageSpot(i, damage, self.items[idx].position.copy()))
+                            self.damage_sound.play()
 
             if self.items[idx].removal_mark:
                 r.append(idx)
@@ -181,7 +195,7 @@ class GameManager():
             pygame.event.post(
                 pygame.Event(event.CHANGE_SCENE, {
                     'scene': lose.LoseScene,
-                    'ctx': (False)
+                    'ctx': [False]
                 })
             )
 
@@ -209,34 +223,69 @@ class GameManager():
             i.fired = True
             i.fired_up = False
             self.add_item(i)
-            self.next_enemy_fire = random.uniform(2, 10)
+            self.next_enemy_fire = random.uniform(0.5, 4)
 
     def draw_scurvy_bar(self, cam: camera.Camera):
+        pos_mod = pygame.Vector2()
+        if self.player.scurvy_time <= pirate.Pirate.SCURVY_WARNING_TIME:
+            pos_mod = pygame.Vector2(random.uniform(-5, 5), random.uniform(-5, 5))
+
         cam.with_zindex(
                 lambda s: pygame.draw.rect(s, 0x000000,
                     pygame.Rect(
-                        pygame.Vector2(consts.CANVAS_DIMS[0] - 220, 20),
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 220, 20) + pos_mod,
                         pygame.Vector2(200, 20),
                     )
                 ), zindex=consts.HUD_LAYER
             )
         cam.with_zindex(
                 lambda s: s.blit(text.glyphxel().render_adv('Scurvy-o-meter: ', 2, 0x0),
-                                 pygame.Vector2(consts.CANVAS_DIMS[0] - 470, 8)), zindex=consts.HUD_LAYER
+                                 pygame.Vector2(consts.CANVAS_DIMS[0] - 470, 8) + pos_mod), zindex=consts.HUD_LAYER
             )
         cam.with_zindex(
             lambda s: pygame.draw.rect(s, 0xffffff,
                 pygame.Rect(
-                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25),
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25) + pos_mod,
                         pygame.Vector2(190, 10),
                     )
             ), zindex=consts.HUD_LAYER
         )
         cam.with_zindex(
-            lambda s: pygame.draw.rect(s, 0x00ff00,
+            lambda s: pygame.draw.rect(s, 0xecab11,
                 pygame.Rect(
-                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25),
-                        pygame.Vector2(190 * (self.player.scurvy_time / self.player.SCURVY_TIME), 10),
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 25) + pos_mod,
+                        pygame.Vector2(190 * (self.player.scurvy_time / pirate.Pirate.SCURVY_TIME), 10),
+                    )
+            ), zindex=consts.HUD_LAYER
+        )
+
+    def draw_drunk_bar(self, cam: camera.Camera):
+
+        cam.with_zindex(
+                lambda s: pygame.draw.rect(s, 0x000000,
+                    pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 220, 80),
+                        pygame.Vector2(200, 20),
+                    )
+                ), zindex=consts.HUD_LAYER
+            )
+        cam.with_zindex(
+                lambda s: s.blit(text.glyphxel().render_adv('Drunk-o-meter: ', 2, 0x0),
+                                 pygame.Vector2(consts.CANVAS_DIMS[0] - 455, 68)), zindex=consts.HUD_LAYER
+            )
+        cam.with_zindex(
+            lambda s: pygame.draw.rect(s, 0xffffff,
+                pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 85),
+                        pygame.Vector2(190, 10),
+                    )
+            ), zindex=consts.HUD_LAYER
+        )
+        cam.with_zindex(
+            lambda s: pygame.draw.rect(s, 0xc12458,
+                pygame.Rect(
+                        pygame.Vector2(consts.CANVAS_DIMS[0] - 215, 85),
+                        pygame.Vector2(190 * (self.player.drunk_time / pirate.Pirate.MAX_DRUNK_TIME), 10),
                     )
             ), zindex=consts.HUD_LAYER
         )

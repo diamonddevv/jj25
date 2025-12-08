@@ -19,6 +19,9 @@ class LoseScene(menu.MenuScene):
         super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
+        self.lose = pygame.mixer.Sound('res/sound/lose.wav')
+        self.lose.play()
+
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 125),
                       lambda: "loser", 3, 0x000000, centered=True, sfsans=True)
@@ -26,9 +29,9 @@ class LoseScene(menu.MenuScene):
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
                       lambda: (
-                          "Your crew was overpowered by the enemies.."
+                          "Yer crew was overpowered by the foes.."
                       ) if not ctx[0] else (
-                          "You died of scurvy :(\n(maybe eat more lemons next time..)"
+                          "Arr! Ye perished of scurvy. (maybe eat more lemons next time..)"
                       ), 2, 0x000000, centered=True)
         )
         

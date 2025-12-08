@@ -19,13 +19,20 @@ class WinScene(menu.MenuScene):
         super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
+        self.win = pygame.mixer.Sound('res/sound/win.wav')
+        self.win.play()
+
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 125),
                       lambda: "winner", 3, 0x000000, centered=True, sfsans=True)
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
-                      lambda: "You sunk the enemy ship,\nbecause you are the superior pirates", 2, 0x000000, centered=True)
+                      lambda: "Ye sunk the foes ship!", 2, 0x000000, centered=True)
+        )
+        self.container.add(
+            ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 560),
+                      lambda: "Yer the superior pirate fleet. Arr!", 2, 0x000000, centered=True)
         )
         
         self.container.add(

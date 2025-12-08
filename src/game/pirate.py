@@ -29,13 +29,16 @@ class Pirate(fireable.Fireable):
     ANIM_EAT: str = 'eat'
 
     SCURVY_TIME: float = 30.0
+    SCURVY_WARNING_TIME: float = 10.0
+    MIN_DRUNK_TIME: float = 5.0
+    MAX_DRUNK_TIME: float = 18.0
 
     def __init__(self, manager: manager.GameManager, pos: pygame.Vector2) -> None:
         super().__init__()
         self.position = pos
         self.speed = 300.0
         self.sprite_rotation = 0.0
-        self.reach = 80
+        self.reach = 120
         self.crouched = False
         self.update_anim = True
         self.held_item_idx: int = -1
@@ -76,6 +79,7 @@ class Pirate(fireable.Fireable):
         self.pickup_sound = pygame.mixer.Sound('res/sound/pickup.wav')
         self.drink_sound = pygame.mixer.Sound('res/sound/drink.wav')
         self.eat_sound = pygame.mixer.Sound('res/sound/eat.wav')
+        self.scurvy_sound = pygame.mixer.Sound('res/sound/scurvy.wav')
 
     def draw(self, cam: camera.Camera):
         if self.hidden:
@@ -115,8 +119,6 @@ class Pirate(fireable.Fireable):
                 self.fired = False
                 self.sprite_rotation = 0.0
 
-                self.manager.team_name, self.manager.enemy_team_name = self.manager.enemy_team_name, self.manager.team_name
-                self.manager.boat_health, self.manager.enemy_health = self.manager.enemy_health, self.manager.boat_health
         else:
 
             if not self.can_move:
@@ -130,7 +132,11 @@ class Pirate(fireable.Fireable):
                     movement += direction * math.sin(self.drunk_time * 10) * 0.3
                 self.drunk_time -= dt
 
-            self.scurvy_time -= dt
+                self.drunk_time = min(self.drunk_time, Pirate.MAX_DRUNK_TIME)
+
+            self.scurvy_time -= dt * (0.5 if self.drunk_time > 0.0 else 1)
+            if round(self.scurvy_time) == Pirate.SCURVY_WARNING_TIME:
+                self.scurvy_sound.play()
             if self.scurvy_time <= 0.0:
                 self.can_move = False
                 event.sequence(
@@ -178,7 +184,7 @@ class Pirate(fireable.Fireable):
     def closest_interactable_idx(self) -> int:
         if len(self.manager.interactables) <= 0:
             return -1
-        return sorted(self.manager.interactables, key=lambda idx: self.position.distance_squared_to(self.manager.interactables[idx].position))[0]
+        return sorted(filter(lambda i: self.manager.interactables[i].can_highlight(self), self.manager.interactables), key=lambda idx: self.position.distance_squared_to(self.manager.interactables[idx].position))[0]
     
     def fire(self, firer: Pirate, cannon: interact.Cannon):
         super().fire(firer, cannon)
@@ -188,6 +194,9 @@ class Pirate(fireable.Fireable):
         def _swap():
             self.fired_up = False
             self.position.y = -consts.CANVAS_DIMS[1] / 2
+            self.manager.team_name, self.manager.enemy_team_name = self.manager.enemy_team_name, self.manager.team_name
+            self.manager.boat_health, self.manager.enemy_health = self.manager.enemy_health, self.manager.boat_health
+            
         event.sequence([
                     (lambda: firer.manager.ship_map.overlay.set_alpha(65), 0.2),
                     (lambda: firer.manager.ship_map.overlay.set_alpha(127), 0.2),
@@ -210,7 +219,7 @@ class Pirate(fireable.Fireable):
             if self.manager.items[self.held_item_idx].gets_you_drunk():
                 def _drink():
                     self.drink_sound.play()
-                    self.drunk_time = random.uniform(2.5, 10)
+                    self.drunk_time += random.uniform(Pirate.MIN_DRUNK_TIME, Pirate.MAX_DRUNK_TIME)
                     self.can_move = True
 
                 self.manager.items[self.held_item_idx].removal_mark = True
@@ -299,7 +308,7 @@ class PlayerPirate(Pirate):
         for idx in self.manager.interactables:
             self.manager.interactables[idx].highlight = False
         closest = self.closest_interactable_idx()
-        if closest != -1 and self.position.distance_squared_to(self.manager.interactables[closest].position) <= self.reach ** 2 and self.manager.interactables[closest].can_highlight():
+        if closest != -1 and self.position.distance_squared_to(self.manager.interactables[closest].position) <= self.reach ** 2:
             self.manager.interactables[closest].highlight = True
 
         if pressed_interact:
@@ -364,7 +373,6 @@ class NPCPirate(Pirate):
 class PirateBrain(brain.Brain[NPCPirate]):
     def __init__(self) -> None:
         super().__init__()
-
 
         self.add_task(WalkToPositionTask, 5)
         self.add_task(FindItemTask, 1)

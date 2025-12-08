@@ -30,6 +30,9 @@ class Window():
 
         event.CallbackManager.register(event.CHANGE_SCENE, lambda d: self.scene_manager.change(self.camera, d['scene'], d['ctx']))
 
+        player_spr = spritesheet.Spritesheet(util.load_texture('res/pirate.png'))
+        c = player_spr.get_cell(1, 1)
+        self.window.set_icon(c)
 
         #
         """

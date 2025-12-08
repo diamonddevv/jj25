@@ -25,7 +25,7 @@ class WinScene(menu.MenuScene):
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
-                      lambda: "you didded it", 2, 0x000000, centered=True)
+                      lambda: "You sunk the enemy ship,\nbecause you are the superior pirates", 2, 0x000000, centered=True)
         )
         
         self.container.add(

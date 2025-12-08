@@ -25,7 +25,7 @@ class LoseScene(menu.MenuScene):
         )
         self.container.add(
             ui.UiText(pygame.Vector2(consts.CANVAS_DIMS[0] / 2, 530),
-                      lambda: "your ship sinked lol", 2, 0x000000, centered=True)
+                      lambda: "your ship sinked lol\n(how did you even lose)", 2, 0x000000, centered=True)
         )
         
         self.container.add(

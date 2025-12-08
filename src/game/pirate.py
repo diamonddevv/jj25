@@ -53,6 +53,13 @@ class Pirate(fireable.Fireable):
 
             Pirate.ANIM_DRINK: (3, [(4, 0), (5, 0), (6, 0), (7, 0)])
         })
+        # this texture is very important to me
+        # i designed it last year for a project i never finished
+        # that project never went anywhere because i couldnt make a good idea out of it
+        # but i love the texture and i love the person who i designed it with
+        # so it was important to me that i used it for something
+        # if for some reason you are reading this, l, i love you
+
 
         self.drunk_bubbles = animate.AnimatedTexture(spritesheet.Spritesheet(util.load_texture('res/pirate.png')), {
             '' : (4, [(2, 4), (3, 4), (4, 4)])
@@ -422,13 +429,14 @@ class FireCannonTask(brain.Task[NPCPirate]):
 class GetPissedTask(brain.Task[NPCPirate]):
 
     def process(self, dt: float, cam: camera.Camera, t: NPCPirate):
+        super().process(dt, cam, t)
         t.try_get_drunk()
 
     def prereq(self, t: NPCPirate) -> bool:
         return t.held_item_idx != -1 and t.manager.items[t.held_item_idx].gets_you_drunk()
     
     def can_finish(self, t: NPCPirate) -> bool:
-        return t.held_item_idx == 1
+        return t.held_item_idx == -1
     
 class RepairBoatTask(brain.Task[NPCPirate]):
     def __init__(self) -> None:

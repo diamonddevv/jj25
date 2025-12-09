@@ -16,7 +16,7 @@ class Fireable():
         self.hidden = False
         self.fired = False
         self.fired_up = True
-        self.cannon_sound = pygame.mixer.Sound('res/sound/cannon.wav')
+        self.cannon_sound = pygame.mixer.Sound('res/sound/cannon.ogg')
 
     def hide(self):
         self.hidden = True

@@ -42,7 +42,7 @@ class GameManager():
 
         self.next_enemy_fire: float = 0.0
 
-        self.damage_sound = pygame.mixer.Sound('res/sound/damage.wav')
+        self.damage_sound = pygame.mixer.Sound('res/sound/damage.ogg')
 
     def add_item(self, item: item.Item) -> int:
         self.items[self._next_item_idx] = item

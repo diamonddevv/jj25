@@ -19,7 +19,7 @@ class WinScene(menu.MenuScene):
         super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
-        self.win = pygame.mixer.Sound('res/sound/win.wav')
+        self.win = pygame.mixer.Sound('res/sound/win.ogg')
         self.win.play()
 
         self.container.add(

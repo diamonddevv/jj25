@@ -1,5 +1,6 @@
 # (C) DiamondDev. Donate to Jingle Jam!
 import pygame
+import asyncio
 
 from src import window
 from src.game import game
@@ -12,6 +13,7 @@ if __name__ == "__main__":
 
     wnd = window.Window(mainmenu.MainMenu)
     wnd.init_resources()
-    wnd.start()
+    
+    asyncio.run(wnd.start())
     
     

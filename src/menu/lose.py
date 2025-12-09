@@ -19,7 +19,7 @@ class LoseScene(menu.MenuScene):
         super().__init__(camera, ctx)
         camera.fill_col = 0x2890dc
 
-        self.lose = pygame.mixer.Sound('res/sound/lose.wav')
+        self.lose = pygame.mixer.Sound('res/sound/lose.ogg')
         self.lose.play()
 
         self.container.add(

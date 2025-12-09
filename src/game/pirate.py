@@ -76,10 +76,10 @@ class Pirate(fireable.Fireable):
             '' : (4, [(2, 4), (3, 4), (4, 4)])
         })
 
-        self.pickup_sound = pygame.mixer.Sound('res/sound/pickup.wav')
-        self.drink_sound = pygame.mixer.Sound('res/sound/drink.wav')
-        self.eat_sound = pygame.mixer.Sound('res/sound/eat.wav')
-        self.scurvy_sound = pygame.mixer.Sound('res/sound/scurvy.wav')
+        self.pickup_sound = pygame.mixer.Sound('res/sound/pickup.ogg')
+        self.drink_sound = pygame.mixer.Sound('res/sound/drink.ogg')
+        self.eat_sound = pygame.mixer.Sound('res/sound/eat.ogg')
+        self.scurvy_sound = pygame.mixer.Sound('res/sound/scurvy.ogg')
 
     def draw(self, cam: camera.Camera):
         if self.hidden:

@@ -129,7 +129,7 @@ class ItemBarrel(Interactable):
                                                 })
         
         self.cooldown = 0.0
-        self.barrel_sound = pygame.mixer.Sound('res/sound/barrel.wav')
+        self.barrel_sound = pygame.mixer.Sound('res/sound/barrel.ogg')
 
     def draw(self, cam: camera.Camera):
         cam.blit(
@@ -206,7 +206,7 @@ class DamageSpot(Interactable):
             
             self.idx = idx
             self.damage = damage
-            self.repair_sound = pygame.mixer.Sound('res/sound/repair.wav')
+            self.repair_sound = pygame.mixer.Sound('res/sound/repair.ogg')
 
         def draw(self, cam: camera.Camera):
             cam.blit(

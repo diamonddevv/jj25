@@ -1,4 +1,5 @@
 import pygame
+import asyncio
 
 from src import util
 from src import event
@@ -25,7 +26,7 @@ class Window():
         self.camera = camera.Camera(self.window)
         self.scene_manager = scene.SceneManager(self.camera, default_scene, ())
 
-        pygame.mixer.music.load('res/sound/pirate-plunder.wav')
+        pygame.mixer.music.load('res/sound/pirate-plunder.ogg')
         pygame.mixer.music.set_volume(0.25)
         pygame.mixer.music.play(-1)
 
@@ -76,7 +77,7 @@ class Window():
     def init_resources(self):
         text.PixelFont.init_pixelfonts()
 
-    def start(self):
+    async def start(self):
         self.keep_open = True
         dt = 0.0
 
@@ -89,6 +90,7 @@ class Window():
 
             self.window.flip()
             dt = self.clock.tick(consts.TARGET_FRAMERATE) / 1000
+            await asyncio.sleep(0)
 
             self.window.title = f"{consts.TITLE} | FPS: {self.clock.get_fps():.0f}"
 

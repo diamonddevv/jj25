@@ -1,5 +1,4 @@
 import pygame
-import asyncio
 
 from src import util
 from src import event
@@ -77,7 +76,7 @@ class Window():
     def init_resources(self):
         text.PixelFont.init_pixelfonts()
 
-    async def start(self):
+    def start(self):
         self.keep_open = True
         dt = 0.0
 
@@ -90,7 +89,6 @@ class Window():
 
             self.window.flip()
             dt = self.clock.tick(consts.TARGET_FRAMERATE) / 1000
-            await asyncio.sleep(0)
 
             self.window.title = f"{consts.TITLE} | FPS: {self.clock.get_fps():.0f}"
 

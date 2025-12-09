@@ -1,2 +1,2 @@
 @echo off
-".venv/scripts/python.exe" -b pygbag .
+".venv/scripts/python.exe" -m pygbag .
